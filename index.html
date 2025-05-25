@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Passport Photo Maker with Background Removal</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Passport Photo Maker</h1>
+
+    <label for="photoUpload">Upload Photo:</label>
+    <input type="file" id="photoUpload" accept="image/*" />
+
+    <button id="removeBg">Remove Background</button>
+    <div><canvas id="previewCanvas"></canvas></div>
+
+    <label>Choose Photo Size:</label>
+    <select id="unitSelect">
+      <option value="px">Pixels</option>
+      <option value="mm">Millimeters</option>
+      <option value="in">Inches</option>
+    </select>
+    <input type="number" id="widthInput" placeholder="Width" />
+    <input type="number" id="heightInput" placeholder="Height" />
+
+    <label>Choose Paper Size:</label>
+    <select id="paperSize">
+      <option value="A4">A4 (210mm x 297mm)</option>
+      <option value="4x6">4x6 inch</option>
+      <option value="5x7">5x7 inch</option>
+      <option value="Letter">Letter (8.5x11 inch)</option>
+    </select>
+
+    <button onclick="generateLayout()">Generate</button>
+    <button onclick="downloadLayout()">Download</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
