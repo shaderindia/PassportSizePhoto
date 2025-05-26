@@ -288,6 +288,7 @@ body.dark #photo-preview-wrapper {
   border-radius: 50%;
   z-index: 1;
   cursor: pointer;
+  pointer-events: auto;
 }
 .crop-handle.nw { left: -8px; top: -8px; cursor: nwse-resize; }
 .crop-handle.n { left: 50%; top: -8px; transform: translateX(-50%); cursor: ns-resize; }
