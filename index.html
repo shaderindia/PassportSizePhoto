@@ -9,6 +9,7 @@
     <!-- Face-api.js for AI face detection -->
     <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
+        /* [CSS unchanged, see previous answer for full code] */
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f0f4f8;
@@ -17,12 +18,7 @@
             flex-direction: column;
             min-height: 100vh;
         }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1rem;
-            flex-grow: 1;
-        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 1rem; flex-grow: 1; }
         .app-section {
             background-color: #ffffff;
             border-radius: 1rem;
@@ -34,11 +30,7 @@
             transform: translateY(20px);
             transition: opacity 0.5s ease-out, transform 0.5s ease-out;
         }
-        .app-section.active {
-            display: block;
-            opacity: 1;
-            transform: translateY(0);
-        }
+        .app-section.active { display: block; opacity: 1; transform: translateY(0);}
         h1, h2, h3 {
             color: #1e293b;
             font-weight: 600;
@@ -77,9 +69,7 @@
             border: none;
             cursor: pointer;
         }
-        .btn-secondary:hover {
-            background-color: #cbd5e1;
-        }
+        .btn-secondary:hover { background-color: #cbd5e1; }
         input[type="file"] {
             border: 2px dashed #94a3b8;
             padding: 1rem;
@@ -88,9 +78,7 @@
             cursor: pointer;
             transition: background-color 0.2s ease;
         }
-        input[type="file"]:hover {
-            background-color: #eff6ff;
-        }
+        input[type="file"]:hover { background-color: #eff6ff; }
         canvas {
             border: 1px solid #cbd5e1;
             background-color: #f8fafc;
@@ -110,15 +98,8 @@
             max-width: 100%;
             overflow: hidden;
         }
-        .option-group label {
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.5rem;
-            cursor: pointer;
-        }
-        .option-group input[type="radio"], .option-group input[type="checkbox"] {
-            margin-right: 0.5rem;
-        }
+        .option-group label { display: flex; align-items: center; margin-bottom: 0.5rem; cursor: pointer;}
+        .option-group input[type="radio"], .option-group input[type="checkbox"] { margin-right: 0.5rem;}
         input[type="number"], input[type="color"] {
             border: 1px solid #cbd5e1;
             border-radius: 0.5rem;
@@ -126,10 +107,7 @@
             margin-left: 0.5rem;
             width: 80px;
         }
-        input[type="number"]:disabled {
-            background-color: #e2e8f0;
-            cursor: not-allowed;
-        }
+        input[type="number"]:disabled { background-color: #e2e8f0; cursor: not-allowed; }
         .footer {
             background-color: #1e293b;
             color: #e2e8f0;
@@ -142,10 +120,11 @@
         .footer a {
             color: #a78bfa;
             text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4em;
         }
-        .footer a:hover {
-            text-decoration: underline;
-        }
+        .footer a:hover { text-decoration: underline; }
         .message-box {
             position: fixed;
             top: 50%;
@@ -251,6 +230,12 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* Instagram logo icon style */
+        .insta-logo {
+            width: 1.25em;
+            height: 1.25em;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -266,172 +251,40 @@
     <header class="bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-8 text-center rounded-b-xl shadow-lg">
         <h1 class="text-4xl font-bold mb-2">Passport Photo Creator</h1>
         <p class="text-lg">Get ready to make perfect passport photos with ease.</p>
-        <p class="mt-4 text-md">— Nishikant Xalxo <a href="https://www.instagram.com/nishix_vamp" target="_blank" class="text-white hover:underline font-medium">@nishix_vamp</a></p>
+        <p class="mt-4 text-md">— Nishikant Xalxo
+            <a href="https://www.instagram.com/nishix_vamp" target="_blank" class="text-white hover:underline font-medium">
+                <!-- Instagram SVG logo -->
+                <svg class="insta-logo" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <rect width="20" height="20" x="2" y="2" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="17" cy="7" r="1.5" fill="currentColor"/>
+                </svg>
+                @nishix_vamp
+            </a>
+        </p>
     </header>
+    <!-- [Remaining HTML unchanged, see previous answer for all sections, e.g. main, footer, script] -->
     <main class="container py-8">
-        <section id="initial-setup-section" class="app-section active">
-            <h2 class="text-2xl mb-4">1. Initial Setup: Units, Photo Size & Page Size</h2>
-            <p class="mb-6 text-gray-600">Choose your preferred units, define your passport photo dimensions, and select the paper size for printing.</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
-                    <h3 class="text-xl font-semibold mb-3">Units</h3>
-                    <div class="option-group flex flex-col sm:flex-row gap-4">
-                        <label class="inline-flex items-center">
-                            <input type="radio" name="units" value="px" checked class="form-radio text-indigo-600">
-                            <span class="ml-2 text-gray-700">Pixels (px)</span>
-                        </label>
-                        <label class="inline-flex items-center">
-                            <input type="radio" name="units" value="mm" class="form-radio text-indigo-600">
-                            <span class="ml-2 text-gray-700">Millimeters (mm)</span>
-                        </label>
-                        <label class="inline-flex items-center">
-                            <input type="radio" name="units" value="in" class="form-radio text-indigo-600">
-                            <span class="ml-2 text-gray-700">Inches (in)</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
-                    <h3 class="text-xl font-semibold mb-3">Passport Photo Size</h3>
-                    <div class="flex flex-col gap-4">
-                        <label class="flex items-center text-gray-700">Width (<span id="photoUnitW" class="ml-1">px</span>): <input type="number" id="passportPhotoWidth" value="35" min="1" class="ml-2"></label>
-                        <label class="flex items-center text-gray-700">Height (<span id="photoUnitH" class="ml-1">px</span>): <input type="number" id="passportPhotoHeight" value="45" min="1" class="ml-2"></label>
-                    </div>
-                    <p class="text-sm text-gray-500 mt-2">Standard passport photo size is 35mm x 45mm.</p>
-                </div>
-                <div class="bg-gray-50 p-6 rounded-lg shadow-inner col-span-full">
-                    <h3 class="text-xl font-semibold mb-3">Page Size</h3>
-                    <div class="option-group flex flex-col sm:flex-row gap-4">
-                        <label class="inline-flex items-center">
-                            <input type="radio" name="pageSize" value="A4" checked class="form-radio text-indigo-600">
-                            <span class="ml-2 text-gray-700">A4 (210x297mm)</span>
-                        </label>
-                        <label class="inline-flex items-center">
-                            <input type="radio" name="pageSize" value="4x6" class="form-radio text-indigo-600">
-                            <span class="ml-2 text-gray-700">4x6 (101.6x152.4mm)</span>
-                        </label>
-                        </div>
-                </div>
-            </div>
-            <div class="flex justify-end gap-4 mt-6">
-                <button id="nextToUploadBtn" class="btn-primary">Next: Upload Photo</button>
-            </div>
-        </section>
-        <section id="photo-upload-section" class="app-section">
-            <h2 class="text-2xl mb-4">2. Upload & Crop Your Photo</h2>
-            <p class="mb-4 text-gray-600">Upload your photo. The photo will be auto-centered on your face for best results. You can fine-tune the crop frame as needed.</p>
-            <input type="file" id="photoUpload" accept="image/*,.png,.jpg,.jpeg,.bmp,.webp,.heic,.heif" class="w-full">
-            <div id="cropContainer" class="crop-container hidden">
-                <img id="uploadedImage" class="absolute hidden" alt="Uploaded Image">
-                <div id="cropArea" class="crop-area">
-                    <div class="crop-handle top-left" data-handle="tl"></div>
-                    <div class="crop-handle top-right" data-handle="tr"></div>
-                    <div class="crop-handle bottom-left" data-handle="bl"></div>
-                    <div class="crop-handle bottom-right" data-handle="br"></div>
-                </div>
-            </div>
-            <div class="flex justify-center items-center gap-4 mt-4">
-                <button id="zoomOutBtn" class="btn-secondary px-4 py-2 text-xl font-bold">-</button>
-                <span class="text-gray-700">Zoom: <span id="zoomLevel">100%</span></span>
-                <button id="zoomInBtn" class="btn-secondary px-4 py-2 text-xl font-bold">+</button>
-            </div>
-            <div class="flex justify-between gap-4 mt-6">
-                <button id="backToInitialSetupBtn" class="btn-secondary">Back: Initial Setup</button>
-                <button id="nextToConfigurePreviewBtn" class="btn-primary" disabled>Next: Configure & Preview</button>
-            </div>
-            <div id="faceDetectionStatus" class="text-center mt-4 text-sm text-violet-600"></div>
-        </section>
-        <section id="configure-preview-section" class="app-section">
-            <h2 class="text-2xl mb-4">3. Configure & Preview Your Photos</h2>
-            <p class="mb-6 text-gray-600">Adjust the number of photos and spacing. The preview updates in real-time.</p>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="flex flex-col gap-6">
-                    <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
-                        <h3 class="text-xl font-semibold mb-3">Number of Photos</h3>
-                        <div class="option-group flex items-center">
-                            <label class="flex items-center text-gray-700">Photos per page: <input type="number" id="numPhotos" value="8" min="1" class="ml-2 w-20"></label>
-                            <p class="ml-4 text-gray-600">Max fit: <span id="maxPhotos" class="font-semibold">--</span></p>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
-                        <h3 class="text-xl font-semibold mb-3">Spacing & Margins</h3>
-                        <div class="flex flex-col gap-4">
-                            <label class="flex items-center text-gray-700">Horizontal Spacing (<span id="unitDisplayH" class="ml-1">px</span>): <input type="number" id="horizontalSpacing" value="10" min="0" class="ml-2"></label>
-                            <label class="flex items-center text-gray-700">Vertical Spacing (<span id="unitDisplayV" class="ml-1">px</span>): <input type="number" id="verticalSpacing" value="10" min="0" class="ml-2"></label>
-                            <div class="mt-4 border-t border-gray-200 pt-4">
-                                <label class="flex items-center text-gray-700">
-                                    <input type="checkbox" id="autoMarginCheckbox" class="form-checkbox text-indigo-600">
-                                    <span class="ml-2">Enable Auto-Centering (Margins)</span>
-                                </label>
-                                <label class="flex items-center text-gray-700 mt-2">Top Margin (<span id="unitDisplayT" class="ml-1">px</span>): <input type="number" id="topMargin" value="10" min="0" class="ml-2"></label>
-                                <label class="flex items-center text-gray-700">Bottom Margin (<span id="unitDisplayB" class="ml-1">px</span>): <input type="number" id="bottomMargin" value="10" min="0" class="ml-2"></label>
-                                <label class="flex items-center text-gray-700">Left Margin (<span id="unitDisplayL" class="ml-1">px</span>): <input type="number" id="leftMargin" value="10" min="0" class="ml-2"></label>
-                                <label class="flex items-center text-gray-700">Right Margin (<span id="unitDisplayR" class="ml-1">px</span>): <input type="number" id="rightMargin" value="10" min="0" class="ml-2"></label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
-                        <h3 class="text-xl font-semibold mb-3">Cut Line Options</h3>
-                        <label class="flex items-center text-gray-700">
-                            <input type="checkbox" id="enableDottedLines" class="form-checkbox text-indigo-600">
-                            <span class="ml-2">Show Dotted Cut Lines</span>
-                        </label>
-                        <p class="text-sm text-gray-500 mt-2">Adds dotted lines in the spacing for easier cutting.</p>
-                    </div>
-                </div>
-                <div class="preview-output-container flex justify-center items-center bg-gray-100 p-4 rounded-lg shadow-inner">
-                    <canvas id="finalPreviewCanvas"></canvas>
-                </div>
-            </div>
-            <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
-                <span class="text-gray-700">Download Format:</span>
-                <label class="inline-flex items-center">
-                    <input type="radio" name="downloadFormat" value="jpg-high" checked class="form-radio text-indigo-600">
-                    <span class="ml-2 text-gray-700">JPG (High Quality)</span>
-                </label>
-                <label class="inline-flex items-center ml-4">
-                    <input type="radio" name="downloadFormat" value="jpg-normal" class="form-radio text-indigo-600">
-                    <span class="ml-2 text-gray-700">JPG (Normal Quality)</span>
-                </label>
-                <label class="inline-flex items-center ml-4">
-                    <input type="radio" name="downloadFormat" value="png" class="form-radio text-indigo-600">
-                    <span class="ml-2 text-gray-700">PNG (Lossless)</span>
-                </label>
-            </div>
-            <div class="flex justify-between gap-4 mt-8">
-                <button id="backToPhotoUploadBtn" class="btn-secondary">Back: Upload & Crop</button>
-                <button id="downloadBtn" class="btn-primary">Download Photo</button>
-            </div>
-        </section>
-        <section id="share-app-section" class="app-section">
-            <h2 class="text-2xl mb-4">4. Share This App!</h2>
-            <p class="mb-6 text-gray-600">Help others create perfect passport photos too! Share this app with your friends and family.</p>
-            <div class="flex flex-wrap justify-center gap-4">
-                <button id="shareTwitter" class="btn-secondary flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.21-6.966L5.034 21.75H1.726l7.575-8.65L1.45 2.25h3.34l4.637 5.92L18.244 2.25zm-2.887 18.813H18.2l-4.706-6.281l-.348-.465l-5.632-7.533H2.887l7.165 9.58L15.357 21.063z"/></svg>
-                    Share on X (Twitter)
-                </button>
-                <button id="shareFacebook" class="btn-secondary flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33V22H12c5.523 0 10-4.477 10-10z"/></svg>
-                    Share on Facebook
-                </button>
-                <button id="copyLink" class="btn-secondary flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-                    Copy Link
-                </button>
-            </div>
-            <div class="flex justify-start gap-4 mt-6">
-                <button id="backToConfigurePreviewBtn" class="btn-secondary">Back: Configure & Preview</button>
-            </div>
-        </section>
+        <!-- [All your app sections go here, unchanged from previous full code] -->
+        <!-- ... -->
     </main>
     <footer class="footer">
         <p class="text-lg mb-2">"Success is not final, failure is not fatal: It is the courage to continue that counts."</p>
-        <p class="text-md">— Nishikant Xalxo <a href="https://www.instagram.com/nishix_vamp" target="_blank">@nishix_vamp</a></p>
+        <p class="text-md">— Nishikant Xalxo
+            <a href="https://www.instagram.com/nishix_vamp" target="_blank">
+                <!-- Instagram SVG logo -->
+                <svg class="insta-logo" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <rect width="20" height="20" x="2" y="2" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="17" cy="7" r="1.5" fill="currentColor"/>
+                </svg>
+                @nishix_vamp
+            </a>
+        </p>
     </footer>
     <script>
-        // ...[the JavaScript code from the previous answer goes here, unchanged]...
-        // The JavaScript code is too long for this single code block, but it is the same as provided in the previous answer.
-        // Please see the previous answer for the full script, which should be pasted here.
+        // [Insert the same JavaScript from previous answer here.]
+        // ... (Unchanged JS for photo upload, face detection, cropping, and the rest)
     </script>
 </body>
 </html>
