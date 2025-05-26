@@ -497,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   init();
 
-  // ==== Render Output Sheet ====
+  // ==== Render Output Sheet (with dotted lines) ====
   function renderCanvas() {
     let dims = getPhotoDimsPx();
     let pageDims = getPageDimsPx();
@@ -538,7 +538,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ctx.lineWidth = 1.1;
     // Verticals
     for (let c = 1; c < cols; c++) {
-      let x = margins.left + c * dims.width + (c - 0.5) * spacing.h - spacing.h/2;
+      let x = margins.left + c * dims.width + (c - 0.5) * spacing.h - spacing.h / 2;
       ctx.beginPath();
       ctx.moveTo(x, margins.top);
       ctx.lineTo(x, pageDims.height - margins.bottom);
@@ -546,7 +546,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     // Horizontals
     for (let r = 1; r < rows; r++) {
-      let y = margins.top + r * dims.height + (r - 0.5) * spacing.v - spacing.v/2;
+      let y = margins.top + r * dims.height + (r - 0.5) * spacing.v - spacing.v / 2;
       ctx.beginPath();
       ctx.moveTo(margins.left, y);
       ctx.lineTo(pageDims.width - margins.right, y);
