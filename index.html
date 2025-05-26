@@ -1,146 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nishix Passport Photo Maker</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Font Awesome CDN for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nishix Passport Photo Maker</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <h1>
-            <span style="font-size:1.7em; font-weight:700; letter-spacing:0.01em;">📸 Nishix Passport Photo Maker</span>
-            <br>
-            <span style="font-size:1.1em; font-weight:500; color:#e3f8ff;">All-in-one, easy, accurate!</span>
-        </h1>
-    </header>
+  <header>
+    <h1>
+      <span style="font-size:1.7em; font-weight:700; letter-spacing:0.01em;">📸 Nishix Passport Photo Maker</span>
+      <br>
+      <span style="font-size:1.1em; font-weight:500; color:#e3f8ff;">All-in-one, easy, accurate!</span>
+    </h1>
+  </header>
 
-    <main>
-        <section class="card">
-            <h2>Photo & Page Settings</h2>
-            <div class="form-group flex-row">
-                <label for="unit">Units</label>
-                <select id="unit">
-                    <option value="mm">Millimeters (mm)</option>
-                    <option value="inch">Inches (inch)</option>
-                    <option value="px">Pixels (px)</option>
-                </select>
-                <div class="dpi-group" id="dpi-group">
-                    <label for="dpi">DPI</label>
-                    <input type="number" id="dpi" value="300" min="50" max="1200">
-                </div>
-            </div>
-            <div class="flex-row gap">
-                <div>
-                    <label for="photo-width">Photo Width</label>
-                    <input type="number" id="photo-width" min="1" step="0.01">
-                </div>
-                <div>
-                    <label for="photo-height">Photo Height</label>
-                    <input type="number" id="photo-height" min="1" step="0.01">
-                </div>
-                <div>
-                    <label for="num-photos">Number</label>
-                    <input type="number" id="num-photos" min="1" value="8" style="width:80px">
-                </div>
-            </div>
-            <div class="flex-row gap" style="margin-top:1em;">
-                <div>
-                    <label for="page-size">Page Size</label>
-                    <select id="page-size">
-                        <option value="a4">A4 (210 x 297 mm)</option>
-                        <option value="4r">4R (102 x 152 mm)</option>
-                        <option value="custom">Custom</option>
-                    </select>
-                </div>
-                <div id="custom-page-size" class="flex-row gap" style="display:none;">
-                    <label for="custom-width">W</label>
-                    <input type="number" id="custom-width" min="1" step="0.01" style="width:80px">
-                    <label for="custom-height">H</label>
-                    <input type="number" id="custom-height" min="1" step="0.01" style="width:80px">
-                </div>
-            </div>
-        </section>
-
-        <section class="card" id="margin-spacing-section">
-            <h2>Spacing & Margins (Manual)</h2>
-            <div class="flex-row gap">
-                <div>
-                    <label for="h-spacing">Horizontal Spacing</label>
-                    <input type="number" id="h-spacing" min="0" step="0.01" value="10">
-                </div>
-                <div>
-                    <label for="v-spacing">Vertical Spacing</label>
-                    <input type="number" id="v-spacing" min="0" step="0.01" value="10">
-                </div>
-            </div>
-            <div class="flex-row gap" style="margin-top:1em;">
-                <div>
-                    <label for="margin-top">Top Margin</label>
-                    <input type="number" id="margin-top" min="0" step="0.01" value="10">
-                </div>
-                <div>
-                    <label for="margin-bottom">Bottom Margin</label>
-                    <input type="number" id="margin-bottom" min="0" step="0.01" value="10">
-                </div>
-                <div>
-                    <label for="margin-left">Left Margin</label>
-                    <input type="number" id="margin-left" min="0" step="0.01" value="10">
-                </div>
-                <div>
-                    <label for="margin-right">Right Margin</label>
-                    <input type="number" id="margin-right" min="0" step="0.01" value="10">
-                </div>
-            </div>
-        </section>
-
-        <section class="card">
-            <h2>Photo Upload & Crop</h2>
-            <div class="form-group">
-                <input type="file" id="photo-upload" accept="image/*">
-                <label for="photo-upload" class="browse-btn"><i class="fa fa-folder-open"></i> Browse Files</label>
-            </div>
-            <div class="photo-preview-container hidden">
-                <div id="photo-preview-wrapper" tabindex="0">
-                    <img id="photo-preview" alt="Preview">
-                    <div id="crop-box" class="hidden"></div>
-                </div>
-                <div class="adjust-hint">Zoom, pan, crop. Use handles or drag the box!</div>
-                <div class="adjust-tools">
-                    <button id="zoom-in" title="Zoom In"><i class="fa fa-search-plus"></i></button>
-                    <button id="zoom-out" title="Zoom Out"><i class="fa fa-search-minus"></i></button>
-                    <button id="rotate-left" title="Rotate Left"><i class="fa fa-undo"></i></button>
-                    <button id="rotate-right" title="Rotate Right"><i class="fa fa-redo"></i></button>
-                    <button id="crop-toggle" title="Crop Tool"><i class="fa fa-crop"></i></button>
-                </div>
-            </div>
-        </section>
-
-        <section class="card" id="output-section">
-            <h2>Sheet Preview & Download</h2>
-            <canvas id="output-canvas"></canvas>
-            <div class="output-controls">
-                <label for="format">Format</label>
-                <select id="format">
-                    <option value="jpg">JPG</option>
-                    <option value="png">PNG</option>
-                </select>
-                <button id="download-btn"><i class="fa fa-download"></i> Download</button>
-                <button id="download-hq-btn"><i class="fa fa-download"></i> High Quality</button>
-            </div>
-        </section>
-    </main>
-    <footer>
-        <div class="branding">
-            <span>App by <a href="https://www.instagram.com/nishix_vamp" target="_blank" rel="noopener">Nishikant Xalxo</a></span>
-            <span class="divider">|</span>
-            <span>Made with <span class="heart">❤️</span> by <a href="https://www.instagram.com/nishix_vamp" target="_blank" rel="noopener"><i class="fab fa-instagram"></i> Nishix</a></span>
+  <main>
+    <section class="card">
+      <h2>Photo & Page Settings</h2>
+      <div class="form-group flex-row">
+        <label for="unit">Units</label>
+        <select id="unit">
+          <option value="mm">Millimeters (mm)</option>
+          <option value="inch">Inches (inch)</option>
+          <option value="px">Pixels (px)</option>
+        </select>
+        <div class="dpi-group" id="dpi-group">
+          <label for="dpi">DPI</label>
+          <input type="number" id="dpi" value="300" min="50" max="1200">
         </div>
-        <button id="share-btn"><i class="fa fa-share-alt"></i> Share this App</button>
-    </footer>
-    <script src="script.js"></script>
+      </div>
+      <div class="flex-row gap">
+        <div>
+          <label for="photo-width">Photo Width</label>
+          <input type="number" id="photo-width" min="1" step="0.01">
+        </div>
+        <div>
+          <label for="photo-height">Photo Height</label>
+          <input type="number" id="photo-height" min="1" step="0.01">
+        </div>
+        <div>
+          <label for="num-photos">Number</label>
+          <input type="number" id="num-photos" min="1" value="8" style="width:80px">
+        </div>
+      </div>
+      <div class="flex-row gap" style="margin-top:1em;">
+        <div>
+          <label for="page-size">Page Size</label>
+          <select id="page-size">
+            <option value="a4">A4 (210 x 297 mm)</option>
+            <option value="4r">4R (102 x 152 mm)</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div id="custom-page-size" class="flex-row gap" style="display:none;">
+          <label for="custom-width">W</label>
+          <input type="number" id="custom-width" min="1" step="0.01" style="width:80px">
+          <label for="custom-height">H</label>
+          <input type="number" id="custom-height" min="1" step="0.01" style="width:80px">
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="margin-spacing-section">
+      <h2>Spacing & Margins</h2>
+      <div class="spacing-margin-col">
+        <div>
+          <label for="h-spacing">Horizontal Spacing</label>
+          <input type="number" id="h-spacing" min="0" step="0.01" value="10">
+        </div>
+        <div>
+          <label for="v-spacing">Vertical Spacing</label>
+          <input type="number" id="v-spacing" min="0" step="0.01" value="10">
+        </div>
+        <div class="autocenter-row">
+          <label>
+            <input type="checkbox" id="autocenter-margin" checked>
+            Auto-Center Margins
+          </label>
+        </div>
+        <div>
+          <label for="margin-top">Top Margin</label>
+          <input type="number" id="margin-top" min="0" step="0.01" value="10">
+        </div>
+        <div>
+          <label for="margin-bottom">Bottom Margin</label>
+          <input type="number" id="margin-bottom" min="0" step="0.01" value="10">
+        </div>
+        <div>
+          <label for="margin-left">Left Margin</label>
+          <input type="number" id="margin-left" min="0" step="0.01" value="10">
+        </div>
+        <div>
+          <label for="margin-right">Right Margin</label>
+          <input type="number" id="margin-right" min="0" step="0.01" value="10">
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Photo Upload & Crop</h2>
+      <div class="form-group">
+        <input type="file" id="photo-upload" accept="image/*">
+        <label for="photo-upload" class="browse-btn"><i class="fa fa-folder-open"></i> Browse Files</label>
+      </div>
+      <div class="photo-preview-container hidden">
+        <div id="photo-preview-wrapper" tabindex="0">
+          <img id="photo-preview" alt="Preview">
+          <div id="crop-box" class="hidden"></div>
+        </div>
+        <div class="adjust-hint">Pan: drag the image. Zoom: mouse wheel or pinch. Crop: drag/move the box.</div>
+        <div class="adjust-tools">
+          <button id="rotate-left" title="Rotate Left"><i class="fa fa-undo"></i></button>
+          <button id="rotate-right" title="Rotate Right"><i class="fa fa-redo"></i></button>
+          <button id="crop-toggle" title="Crop Tool"><i class="fa fa-crop"></i></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="output-section">
+      <h2>Sheet Preview & Download</h2>
+      <canvas id="output-canvas"></canvas>
+      <div class="output-controls">
+        <label for="format">Format</label>
+        <select id="format">
+          <option value="jpg">JPG</option>
+          <option value="png">PNG</option>
+        </select>
+        <button id="download-btn"><i class="fa fa-download"></i> Download</button>
+        <button id="download-hq-btn"><i class="fa fa-download"></i> High Quality</button>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="branding">
+      <span>App by <a href="https://www.instagram.com/nishix_vamp" target="_blank" rel="noopener">Nishikant Xalxo</a></span>
+      <span class="divider">|</span>
+      <span>Made with <span class="heart">❤️</span> by <a href="https://www.instagram.com/nishix_vamp" target="_blank" rel="noopener"><i class="fab fa-instagram"></i> Nishix</a></span>
+    </div>
+    <button id="share-btn"><i class="fa fa-share-alt"></i> Share this App</button>
+  </footer>
+  <script src="script.js"></script>
 </body>
 </html>
