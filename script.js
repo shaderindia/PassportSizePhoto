@@ -1,5 +1,4 @@
 // FULL ADVANCED PASSPORT PHOTO MAKER - ULTRA SMOOTH MOBILE PINCH ZOOM & ALL FEATURES
-
 document.addEventListener('DOMContentLoaded', function () {
   // ==== Element References ====
   const unitSelect = document.getElementById('unit');
@@ -37,6 +36,24 @@ document.addEventListener('DOMContentLoaded', function () {
   const closeInfo = document.getElementById('close-info');
   const themeBtn = document.getElementById('theme-btn');
 
+  // ==== Add "Reset Margins" Button Next to Auto-Center Switch ====
+  const resetMarginsBtn = document.createElement('button');
+  resetMarginsBtn.textContent = "Reset Margins";
+  resetMarginsBtn.className = "btn-main";
+  resetMarginsBtn.style.marginLeft = "0.7em";
+  resetMarginsBtn.type = "button";
+  const autoCenterGroup = autocenterCheck.closest('.form-group');
+  if (autoCenterGroup && autoCenterGroup.parentNode) {
+    autoCenterGroup.appendChild(resetMarginsBtn);
+  }
+  resetMarginsBtn.addEventListener('click', () => {
+    marginTopInput.value = 0;
+    marginBottomInput.value = 0;
+    marginLeftInput.value = 0;
+    marginRightInput.value = 0;
+    renderCanvas();
+  });
+
   // ==== State ====
   let unit = 'mm';
   let dpi = 300;
@@ -44,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function () {
   let imgObj = new window.Image();
   let imgLoaded = false;
   let imgURL = null;
-  let zoom = 1.0, rotate = 0, pan = { x: 0, y: 0 };
+  let rotate = 0;
   let cropActive = false, cropRect = null;
   let isDark = false;
 
@@ -183,42 +200,77 @@ document.addEventListener('DOMContentLoaded', function () {
         imgLoaded = true;
         photoPreviewContainer.classList.remove('hidden');
         photoPreview.src = imgURL;
-        zoom = 1.0;
+        zoomTarget = 1.0;
+        panTarget = { x: 0, y: 0 };
         rotate = 0;
-        pan = { x: 0, y: 0 };
         cropRect = null;
         cropActive = false;
         cropBox.classList.add('hidden');
         showCropUI(false);
-        updatePreviewTransform();
+        snapPreviewTransform();
         renderCanvas();
       };
       imgObj.src = imgURL;
     }
   });
 
-  // --- Ultra-smooth pinch/zoom/pan for mobile & mouse ---
+  // ==== Ultra-smooth pinch/zoom/pan for mobile & mouse ====
   let isImgPanning = false, lastPan = { x: 0, y: 0 };
-  let pinchZooming = false, pinchStartZoom = 1, pinchStartPan = { x: 0, y: 0 }, lastTouchDist = 0, lastPinchMid = { x: 0, y: 0 };
+  let pinchZooming = false;
+  let pinchStart = {
+    dist: 0,
+    mid: { x: 0, y: 0 },
+    zoom: 1,
+    pan: { x: 0, y: 0 }
+  };
+  let zoomTarget = 1, zoomDisplay = 1;
+  let panTarget = { x: 0, y: 0 }, panDisplay = { x: 0, y: 0 };
+
+  function animatePhoto() {
+    zoomDisplay += (zoomTarget - zoomDisplay) * 0.23;
+    panDisplay.x += (panTarget.x - panDisplay.x) * 0.23;
+    panDisplay.y += (panTarget.y - panDisplay.y) * 0.23;
+    photoPreview.style.transform =
+      `translate(${panDisplay.x}px,${panDisplay.y}px) scale(${zoomDisplay}) rotate(${rotate}deg)`;
+    if (
+      Math.abs(zoomTarget - zoomDisplay) > 0.0005 ||
+      Math.abs(panTarget.x - panDisplay.x) > 0.05 ||
+      Math.abs(panTarget.y - panDisplay.y) > 0.05
+    ) {
+      requestAnimationFrame(animatePhoto);
+    }
+  }
+  function updatePreviewTransform(snap = false) {
+    if (snap) {
+      zoomDisplay = zoomTarget;
+      panDisplay.x = panTarget.x;
+      panDisplay.y = panTarget.y;
+      photoPreview.style.transform =
+        `translate(${panDisplay.x}px,${panDisplay.y}px) scale(${zoomDisplay}) rotate(${rotate}deg)`;
+    } else {
+      requestAnimationFrame(animatePhoto);
+    }
+    if (cropActive && cropRect) updateCropBox();
+  }
+  function snapPreviewTransform() { updatePreviewTransform(true); }
 
   photoPreviewWrapper.addEventListener('gesturestart', e => e.preventDefault());
   photoPreviewWrapper.addEventListener('gesturechange', e => e.preventDefault());
   photoPreviewWrapper.addEventListener('gestureend', e => e.preventDefault());
-
   photoPreviewWrapper.addEventListener('touchstart', function(e) {
     if (!imgLoaded) return;
     if (e.touches.length === 2) {
       pinchZooming = true;
-      lastTouchDist = Math.hypot(
+      pinchStart.dist = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
-      pinchStartZoom = zoom;
-      lastPinchMid = {
+      pinchStart.mid = {
         x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
         y: (e.touches[0].clientY + e.touches[1].clientY) / 2
       };
-      pinchStartPan = { ...pan };
+      pinchStart.zoom = zoomTarget;
+      pinchStart.pan = { ...panTarget };
       e.preventDefault();
     } else if (e.touches.length === 1 && !cropActive) {
       isImgPanning = true;
@@ -233,23 +285,23 @@ document.addEventListener('DOMContentLoaded', function () {
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
-      let scale = dist / lastTouchDist;
-      let newZoom = Math.max(0.1, Math.min(pinchStartZoom * scale, 8));
+      let scale = dist / pinchStart.dist;
+      let newZoom = Math.max(0.1, Math.min(pinchStart.zoom * scale, 8));
       let mid = {
         x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
         y: (e.touches[0].clientY + e.touches[1].clientY) / 2
       };
-      pan.x = pinchStartPan.x + (mid.x - lastPinchMid.x) + (mid.x - photoPreviewWrapper.clientWidth/2) * (1 - newZoom/pinchStartZoom);
-      pan.y = pinchStartPan.y + (mid.y - lastPinchMid.y) + (mid.y - photoPreviewWrapper.clientHeight/2) * (1 - newZoom/pinchStartZoom);
-      zoom = newZoom;
+      panTarget.x = pinchStart.pan.x + (mid.x - pinchStart.mid.x) + (mid.x - photoPreviewWrapper.clientWidth/2) * (1 - newZoom/pinchStart.zoom);
+      panTarget.y = pinchStart.pan.y + (mid.y - pinchStart.mid.y) + (mid.y - photoPreviewWrapper.clientHeight/2) * (1 - newZoom/pinchStart.zoom);
+      zoomTarget = newZoom;
       updatePreviewTransform();
       renderCanvas();
       e.preventDefault();
     } else if (e.touches.length === 1 && isImgPanning && !cropActive) {
       let dx = e.touches[0].clientX - lastPan.x;
       let dy = e.touches[0].clientY - lastPan.y;
-      pan.x += dx;
-      pan.y += dy;
+      panTarget.x += dx;
+      panTarget.y += dy;
       lastPan = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       updatePreviewTransform();
       renderCanvas();
@@ -260,8 +312,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (e.touches.length < 2) pinchZooming = false;
     if (e.touches.length === 0) isImgPanning = false;
   }, { passive: false });
-
-  // Mouse events for desktop
   photoPreviewWrapper.addEventListener('pointerdown', (e) => {
     if (!imgLoaded || (cropActive && e.target === cropBox)) return;
     isImgPanning = true;
@@ -271,8 +321,8 @@ document.addEventListener('DOMContentLoaded', function () {
   photoPreviewWrapper.addEventListener('pointermove', (e) => {
     if (isImgPanning && !cropActive) {
       let dx = e.clientX - lastPan.x, dy = e.clientY - lastPan.y;
-      pan.x += dx;
-      pan.y += dy;
+      panTarget.x += dx;
+      panTarget.y += dy;
       lastPan = { x: e.clientX, y: e.clientY };
       updatePreviewTransform();
       renderCanvas();
@@ -284,13 +334,13 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!imgLoaded) return;
     e.preventDefault();
     let scale = Math.exp(-e.deltaY / 240);
-    let prevZoom = zoom;
-    zoom = Math.max(0.1, Math.min(zoom * scale, 8));
+    let prevZoom = zoomTarget;
+    zoomTarget = Math.max(0.1, Math.min(zoomTarget * scale, 8));
     let rect = photoPreview.getBoundingClientRect();
     let cx = e.clientX - rect.left;
     let cy = e.clientY - rect.top;
-    pan.x = (pan.x - cx) * (zoom / prevZoom) + cx;
-    pan.y = (pan.y - cy) * (zoom / prevZoom) + cy;
+    panTarget.x = (panTarget.x - cx) * (zoomTarget / prevZoom) + cx;
+    panTarget.y = (panTarget.y - cy) * (zoomTarget / prevZoom) + cy;
     updatePreviewTransform();
     renderCanvas();
   }, { passive: false });
@@ -455,19 +505,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!cropBox.querySelector('.crop-handle')) addCropHandles();
     updateCropSizeIndicator();
   }
-  function updatePreviewTransform() {
-    if (!imgLoaded) return;
-    photoPreview.style.transform = `translate(${pan.x}px,${pan.y}px) scale(${zoom}) rotate(${rotate}deg)`;
-    if (cropActive && cropRect) updateCropBox();
-  }
   rotateLeftBtn.addEventListener('click', () => {
     rotate = (rotate - 90) % 360;
-    updatePreviewTransform();
+    snapPreviewTransform();
     renderCanvas();
   });
   rotateRightBtn.addEventListener('click', () => {
     rotate = (rotate + 90) % 360;
-    updatePreviewTransform();
+    snapPreviewTransform();
     renderCanvas();
   });
 
@@ -476,10 +521,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (cropActive && cropRect) {
       let pvW = photoPreviewWrapper.clientWidth;
       let pvH = photoPreviewWrapper.clientHeight;
-      let scale = Math.min(pvW / imgW, pvH / imgH) * zoom;
+      let scale = Math.min(pvW / imgW, pvH / imgH) * zoomTarget;
       let rad = rotate * Math.PI / 180;
-      let offsetX = (pvW - imgW * scale) / 2 + pan.x;
-      let offsetY = (pvH - imgH * scale) / 2 + pan.y;
+      let offsetX = (pvW - imgW * scale) / 2 + panTarget.x;
+      let offsetY = (pvH - imgH * scale) / 2 + panTarget.y;
       function inverseTransform(px, py) {
         let cx = px - pvW/2;
         let cy = py - pvH/2;
@@ -501,9 +546,9 @@ document.addEventListener('DOMContentLoaded', function () {
       return { sx, sy, sw, sh };
     }
     let pvW = photoPreviewWrapper.clientWidth, pvH = photoPreviewWrapper.clientHeight;
-    let scale = Math.min(pvW / imgW, pvH / imgH) * zoom;
-    let offsetX = (pvW - imgW * scale) / 2 + pan.x;
-    let offsetY = (pvH - imgH * scale) / 2 + pan.y;
+    let scale = Math.min(pvW / imgW, pvH / imgH) * zoomTarget;
+    let offsetX = (pvW - imgW * scale) / 2 + panTarget.x;
+    let offsetY = (pvH - imgH * scale) / 2 + panTarget.y;
     let sx = Math.max(0, -offsetX / scale);
     let sy = Math.max(0, -offsetY / scale);
     let sw = Math.min(imgW - sx, pvW / scale);
