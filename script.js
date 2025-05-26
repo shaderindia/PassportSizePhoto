@@ -60,7 +60,6 @@ let rotate = 0;
 let pan = { x: 0, y: 0 }, isPanning = false, panStart = { x: 0, y: 0 };
 let cropActive = false;
 let cropRect = null; // { x, y, w, h }
-let cropDragging = false, cropResizing = false, cropStart = null;
 
 // Arrangement
 let numPhotos = 8;
@@ -253,10 +252,10 @@ photoUploadInput.addEventListener('change', (e) => {
             pan = { x: 0, y: 0 };
             photoPreviewContainer.classList.remove('hidden');
             photoPreview.src = imgURL;
-            // Reset crop
             cropRect = null;
             cropActive = false;
             cropBox.classList.add('hidden');
+            showCropUI(false);
             updatePreviewTransform();
             renderCanvas();
         };
@@ -280,9 +279,63 @@ rotateRightBtn.addEventListener('click', () => {
     rotate = (rotate + 90) % 360;
     updatePreviewTransform();
 });
+
+// ====== Improved Crop UI ======
+
+// Add overlay dynamically
+let cropOverlay = null;
+function showCropUI(show) {
+    if (!cropOverlay) {
+        cropOverlay = document.createElement('div');
+        cropOverlay.className = 'crop-overlay';
+        photoPreviewWrapper.appendChild(cropOverlay);
+    }
+    cropOverlay.style.display = show ? 'block' : 'none';
+    cropBox.classList.toggle('active', show);
+}
+
+// Add handles dynamically
+function addCropHandles() {
+    cropBox.innerHTML = '';
+    ['nw','n','ne','e','se','s','sw','w'].forEach(pos => {
+        let h = document.createElement('div');
+        h.className = `crop-handle ${pos}`;
+        h.dataset.handle = pos;
+        cropBox.appendChild(h);
+    });
+    // Add size indicator
+    let size = document.createElement('div');
+    size.className = 'crop-size-indicator';
+    size.id = 'crop-size-indicator';
+    cropBox.appendChild(size);
+}
+function updateCropSizeIndicator() {
+    const dims = getPhotoDimsPx();
+    let pvW = photoPreviewWrapper.clientWidth;
+    let pvH = photoPreviewWrapper.clientHeight;
+    let w = dims.width, h = dims.height;
+    let unitStr = unit;
+    if (cropRect) {
+        // Map preview px to user units for size
+        if (unit === 'px') {
+            w = Math.round(cropRect.w);
+            h = Math.round(cropRect.h);
+        } else if (unit === 'mm') {
+            w = (cropRect.w * 25.4 / dpi).toFixed(1);
+            h = (cropRect.h * 25.4 / dpi).toFixed(1);
+        } else {
+            w = (cropRect.w / dpi).toFixed(2);
+            h = (cropRect.h / dpi).toFixed(2);
+        }
+    }
+    document.getElementById('crop-size-indicator').textContent = `${w} × ${h} ${unitStr}`;
+}
+
+// Show/hide crop UI
 cropToggleBtn.addEventListener('click', () => {
     cropActive = !cropActive;
     cropToggleBtn.classList.toggle('active', cropActive);
+    showCropUI(cropActive);
     if (cropActive) {
         // Start crop box in center with correct aspect ratio
         let pvW = photoPreviewWrapper.clientWidth, pvH = photoPreviewWrapper.clientHeight;
@@ -290,14 +343,170 @@ cropToggleBtn.addEventListener('click', () => {
         let asp = dims.width / dims.height;
         let w = pvW * 0.7, h = pvH * 0.7;
         if (w / h > asp) w = h * asp; else h = w / asp;
-        cropRect = { x: (pvW - w) / 2, y: (pvH - h) / 2, w, h };
+        cropRect = {
+            x: (pvW - w) / 2,
+            y: (pvH - h) / 2,
+            w: w,
+            h: h
+        };
         updateCropBox();
         cropBox.classList.remove('hidden');
+        addCropHandles();
+        updateCropSizeIndicator();
     } else {
         cropBox.classList.add('hidden');
+        showCropUI(false);
     }
     updatePreviewTransform();
 });
+
+// Crop state
+let cropDragMode = null; // 'move' or one of 'nw','n','ne','e','se','s','sw','w'
+let cropStartMouse = null;
+let cropStartRect = null;
+
+// Mouse/touch helpers
+function getPointer(e) {
+    if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    return { x: e.clientX, y: e.clientY };
+}
+function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
+
+// Crop interaction handlers
+function cropPointerDown(e) {
+    if (!cropActive) return;
+    e.preventDefault();
+    const pointer = getPointer(e);
+    const handle = e.target.classList.contains('crop-handle') ? e.target.dataset.handle : null;
+    cropDragMode = handle || 'move';
+    cropStartMouse = pointer;
+    cropStartRect = { ...cropRect };
+    cropBox.classList.add('active');
+    document.body.style.userSelect = 'none';
+}
+function cropPointerMove(e) {
+    if (!cropActive || !cropDragMode) return;
+    e.preventDefault();
+    const pointer = getPointer(e);
+    let dx = pointer.x - cropStartMouse.x;
+    let dy = pointer.y - cropStartMouse.y;
+    let pvW = photoPreviewWrapper.clientWidth;
+    let pvH = photoPreviewWrapper.clientHeight;
+    let dims = getPhotoDimsPx();
+    let asp = dims.width / dims.height;
+    let minW = 36, minH = minW / asp;
+
+    let r = { ...cropStartRect };
+
+    // Resizing
+    if (cropDragMode !== 'move') {
+        // Corners and edges
+        switch (cropDragMode) {
+            case 'nw':
+                r.x += dx;
+                r.y += dy;
+                r.w -= dx;
+                r.h -= dy;
+                break;
+            case 'n':
+                r.y += dy;
+                r.h -= dy;
+                break;
+            case 'ne':
+                r.y += dy;
+                r.w += dx;
+                r.h -= dy;
+                break;
+            case 'e':
+                r.w += dx;
+                break;
+            case 'se':
+                r.w += dx;
+                r.h += dy;
+                break;
+            case 's':
+                r.h += dy;
+                break;
+            case 'sw':
+                r.x += dx;
+                r.w -= dx;
+                r.h += dy;
+                break;
+            case 'w':
+                r.x += dx;
+                r.w -= dx;
+                break;
+        }
+        // Maintain aspect ratio
+        let newAsp = r.w / r.h;
+        if (Math.abs(newAsp - asp) > 0.01) {
+            if (['n','s'].includes(cropDragMode)) {
+                // Vertical edge, adjust width to match aspect
+                r.w = r.h * asp;
+                if (cropDragMode === 'n') r.x = cropStartRect.x + cropStartRect.w - r.w;
+            } else if (['e','w'].includes(cropDragMode)) {
+                // Horizontal edge, adjust height
+                r.h = r.w / asp;
+                if (cropDragMode === 'w') r.y = cropStartRect.y + cropStartRect.h - r.h;
+            } else {
+                // corner, adjust to keep aspect by whichever side changes more
+                let dw = r.w - cropStartRect.w, dh = r.h - cropStartRect.h;
+                if (Math.abs(dw) > Math.abs(dh)) {
+                    r.h = r.w / asp;
+                    if (cropDragMode.endsWith('n')) r.y = cropStartRect.y + cropStartRect.h - r.h;
+                } else {
+                    r.w = r.h * asp;
+                    if (cropDragMode.endsWith('w')) r.x = cropStartRect.x + cropStartRect.w - r.w;
+                }
+            }
+        }
+        // Min size
+        r.w = Math.max(minW, r.w);
+        r.h = Math.max(minH, r.h);
+        // Clamp to bounds
+        if (r.x < 0) { r.w += r.x; r.x = 0;}
+        if (r.y < 0) { r.h += r.y; r.y = 0;}
+        if (r.x + r.w > pvW) r.w = pvW - r.x;
+        if (r.y + r.h > pvH) r.h = pvH - r.y;
+        cropRect = r;
+    }
+    // Move
+    if (cropDragMode === 'move') {
+        r.x = clamp(cropStartRect.x + dx, 0, pvW - r.w);
+        r.y = clamp(cropStartRect.y + dy, 0, pvH - r.h);
+        cropRect.x = r.x;
+        cropRect.y = r.y;
+    }
+    updateCropBox();
+    updateCropSizeIndicator();
+}
+function cropPointerUp(e) {
+    cropDragMode = null;
+    document.body.style.userSelect = '';
+    cropBox.classList.remove('active');
+}
+
+// Attach events
+function attachCropListeners() {
+    cropBox.addEventListener('mousedown', cropPointerDown);
+    cropBox.addEventListener('touchstart', cropPointerDown, { passive: false });
+    window.addEventListener('mousemove', cropPointerMove);
+    window.addEventListener('touchmove', cropPointerMove, { passive: false });
+    window.addEventListener('mouseup', cropPointerUp);
+    window.addEventListener('touchend', cropPointerUp);
+}
+attachCropListeners();
+
+// Update crop box position/size/handles
+function updateCropBox() {
+    if (!cropRect) return;
+    cropBox.style.left = cropRect.x + 'px';
+    cropBox.style.top = cropRect.y + 'px';
+    cropBox.style.width = cropRect.w + 'px';
+    cropBox.style.height = cropRect.h + 'px';
+    if (!cropBox.querySelector('.crop-handle')) addCropHandles();
+    updateCropSizeIndicator();
+}
 
 // -- Photo Preview: Pan & Crop
 let previewDragging = false, previewStart = { x: 0, y: 0 }, panStartVal = { x: 0, y: 0 };
@@ -317,65 +526,11 @@ photoPreviewWrapper.addEventListener('mousemove', (e) => {
 });
 window.addEventListener('mouseup', () => previewDragging = false);
 
-// -- Crop Box Dragging/Resizing
-cropBox.addEventListener('mousedown', (e) => {
-    if (!cropActive) return;
-    let rect = cropBox.getBoundingClientRect();
-    if (e.offsetX > rect.width - 18 && e.offsetY > rect.height - 18) {
-        cropResizing = true;
-    } else {
-        cropDragging = true;
-    }
-    cropStart = { x: e.clientX, y: e.clientY, ...cropRect };
-    e.preventDefault();
-    e.stopPropagation();
-});
-window.addEventListener('mousemove', (e) => {
-    if (cropActive && cropDragging) {
-        let pvW = photoPreviewWrapper.clientWidth, pvH = photoPreviewWrapper.clientHeight;
-        let dx = e.clientX - cropStart.x, dy = e.clientY - cropStart.y;
-        cropRect.x = Math.max(0, Math.min(cropStart.x + dx, pvW - cropRect.w));
-        cropRect.y = Math.max(0, Math.min(cropStart.y + dy, pvH - cropRect.h));
-        updateCropBox();
-    }
-    if (cropActive && cropResizing) {
-        let dims = getPhotoDimsPx();
-        let asp = dims.width / dims.height;
-        let pvW = photoPreviewWrapper.clientWidth, pvH = photoPreviewWrapper.clientHeight;
-        let dx = e.clientX - cropStart.x, dy = e.clientY - cropStart.y;
-        let newW = Math.max(36, cropStart.w + dx);
-        let newH = newW / asp;
-        if (cropRect.y + newH > pvH) newH = pvH - cropRect.y, newW = newH * asp;
-        if (cropRect.x + newW > pvW) newW = pvW - cropRect.x, newH = newW / asp;
-        cropRect.w = newW;
-        cropRect.h = newH;
-        updateCropBox();
-    }
-});
-window.addEventListener('mouseup', () => {
-    cropDragging = false;
-    cropResizing = false;
-});
-
 // -- Update Preview Transform
 function updatePreviewTransform() {
     if (!imgLoaded) return;
     photoPreview.style.transform = `translate(${pan.x}px,${pan.y}px) scale(${zoom}) rotate(${rotate}deg)`;
-    // Crop box
     if (cropActive && cropRect) updateCropBox();
-}
-function updateCropBox() {
-    if (!cropRect) return;
-    cropBox.style.left = cropRect.x + 'px';
-    cropBox.style.top = cropRect.y + 'px';
-    cropBox.style.width = cropRect.w + 'px';
-    cropBox.style.height = cropRect.h + 'px';
-    // Add resize handle if not present
-    if (!cropBox.querySelector('.resize-handle')) {
-        let handle = document.createElement('div');
-        handle.className = 'resize-handle';
-        cropBox.appendChild(handle);
-    }
 }
 
 // ======= Canvas Rendering =======
@@ -447,41 +602,34 @@ function renderCanvas() {
 }
 
 function getCropParams(imgW, imgH) {
-    // In preview, get crop box in image coordinates
     if (cropActive && cropRect) {
-        // Get preview box size
-        let pvW = photoPreviewWrapper.clientWidth, pvH = photoPreviewWrapper.clientHeight;
-        // Find what part of image is shown in preview
+        let pvW = photoPreviewWrapper.clientWidth;
+        let pvH = photoPreviewWrapper.clientHeight;
         let scale = Math.min(pvW / imgW, pvH / imgH) * zoom;
-        // Offset introduced by pan
         let offsetX = (pvW - imgW * scale) / 2 + pan.x;
         let offsetY = (pvH - imgH * scale) / 2 + pan.y;
-        // Crop box in preview coordinates
         let cropX = cropRect.x - offsetX;
         let cropY = cropRect.y - offsetY;
-        let cropW = cropRect.w, cropH = cropRect.h;
-        // Map to image coordinates
+        let cropW = cropRect.w;
+        let cropH = cropRect.h;
         let sx = cropX / scale;
         let sy = cropY / scale;
         let sw = cropW / scale;
         let sh = cropH / scale;
-        // Clamp
         sx = Math.max(0, sx);
         sy = Math.max(0, sy);
         sw = Math.max(10, Math.min(sw, imgW - sx));
         sh = Math.max(10, Math.min(sh, imgH - sy));
         return { sx, sy, sw, sh };
     }
-    // No crop: center region as much as possible
     let pvW = photoPreviewWrapper.clientWidth, pvH = photoPreviewWrapper.clientHeight;
     let scale = Math.min(pvW / imgW, pvH / imgH) * zoom;
-    let viewW = pvW / scale, viewH = pvH / scale;
-    let sx = Math.max(0, -pan.x / scale);
-    let sy = Math.max(0, -pan.y / scale);
-    let sw = Math.min(imgW - sx, viewW);
-    let sh = Math.min(imgH - sy, viewH);
-
-    // Rotation is not handled in canvas render (for user-friendliness: only crop/zoom/pan are reflected in output)
+    let offsetX = (pvW - imgW * scale) / 2 + pan.x;
+    let offsetY = (pvH - imgH * scale) / 2 + pan.y;
+    let sx = Math.max(0, -offsetX / scale);
+    let sy = Math.max(0, -offsetY / scale);
+    let sw = Math.min(imgW - sx, pvW / scale);
+    let sh = Math.min(imgH - sy, pvH / scale);
     return { sx, sy, sw, sh };
 }
 
@@ -494,7 +642,6 @@ downloadBtn.addEventListener('click', () => {
     link.click();
 });
 downloadHQBtn.addEventListener('click', () => {
-    // For high quality, temporarily scale up canvas 2x, then revert
     let origW = outputCanvas.width, origH = outputCanvas.height;
     outputCanvas.width = origW * 2;
     outputCanvas.height = origH * 2;
@@ -521,7 +668,6 @@ shareBtn.addEventListener('click', async () => {
             await navigator.share(shareData);
         } catch (e) { /* ignore */ }
     } else {
-        // Fallback: copy link
         try {
             await navigator.clipboard.writeText(window.location.href);
             shareBtn.innerHTML = '<i class="fa fa-check"></i> Link Copied!';
