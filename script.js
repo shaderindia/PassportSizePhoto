@@ -497,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   init();
 
-  // ==== Render Output Sheet (with dotted lines) ====
+  // ==== Render Output Sheet (with corrected cut lines) ====
   function renderCanvas() {
     let dims = getPhotoDimsPx();
     let pageDims = getPageDimsPx();
@@ -531,22 +531,22 @@ document.addEventListener('DOMContentLoaded', function () {
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, pageDims.width, pageDims.height);
 
-    // Dotted cut lines in the center of spacing (between photos)
+    // Corrected: Dotted cut lines centered in spacing between photos
     ctx.save();
     ctx.strokeStyle = "#e57300";
     ctx.setLineDash([5, 7]);
     ctx.lineWidth = 1.1;
-    // Verticals
+    // Verticals (between columns)
     for (let c = 1; c < cols; c++) {
-      let x = margins.left + c * dims.width + (c - 0.5) * spacing.h - spacing.h / 2;
+      let x = margins.left + c * dims.width + (c - 1) * spacing.h + spacing.h / 2;
       ctx.beginPath();
       ctx.moveTo(x, margins.top);
       ctx.lineTo(x, pageDims.height - margins.bottom);
       ctx.stroke();
     }
-    // Horizontals
+    // Horizontals (between rows)
     for (let r = 1; r < rows; r++) {
-      let y = margins.top + r * dims.height + (r - 0.5) * spacing.v - spacing.v / 2;
+      let y = margins.top + r * dims.height + (r - 1) * spacing.v + spacing.v / 2;
       ctx.beginPath();
       ctx.moveTo(margins.left, y);
       ctx.lineTo(pageDims.width - margins.right, y);
