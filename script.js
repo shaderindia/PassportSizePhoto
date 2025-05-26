@@ -13,7 +13,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const customPageWidthInput = document.getElementById("customPageWidth");
   const customPageHeightInput = document.getElementById("customPageHeight");
 
-  const uploadArea = document.getElementById("uploadArea");
   const fileInput = document.getElementById("fileInput");
   const photoPreview = document.getElementById("photoPreview");
   const hint = document.getElementById("adjustHint");
@@ -21,13 +20,32 @@ document.addEventListener("DOMContentLoaded", () => {
   const cropToolBtn = document.getElementById("cropToolBtn");
   const cropBox = document.getElementById("cropBox");
 
+  const hSpacingSlider = document.getElementById("horizontalSpacing");
+  const vSpacingSlider = document.getElementById("verticalSpacing");
+  const hSpacingLabel = document.getElementById("horizontalSpacingValue");
+  const vSpacingLabel = document.getElementById("verticalSpacingValue");
+
+  const zoomInBtn = document.getElementById("zoomInBtn");
+  const zoomOutBtn = document.getElementById("zoomOutBtn");
+  const rotateLeftBtn = document.getElementById("rotateLeftBtn");
+  const rotateRightBtn = document.getElementById("rotateRightBtn");
+
   let cropActive = false;
   let uploadedImage = null;
+  let scale = 1;
+  let rotation = 0;
 
   function updateUnitLabels() {
     const unit = unitSelect.value;
     unitLabels.forEach(label => label.textContent = unit);
     dpiContainer.style.display = unit === "px" ? "block" : "none";
+    updateSpacingLabels();
+  }
+
+  function updateSpacingLabels() {
+    const unit = unitSelect.value;
+    hSpacingLabel.textContent = `${hSpacingSlider.value} ${unit}`;
+    vSpacingLabel.textContent = `${vSpacingSlider.value} ${unit}`;
   }
 
   unitSelect.addEventListener("change", updateUnitLabels);
@@ -37,26 +55,6 @@ document.addEventListener("DOMContentLoaded", () => {
     radio.addEventListener("change", () => {
       customPageContainer.style.display = radio.value === "custom" ? "block" : "none";
     });
-  });
-
-  uploadArea.addEventListener("click", () => fileInput.click());
-
-  uploadArea.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    uploadArea.classList.add("drag-over");
-  });
-
-  uploadArea.addEventListener("dragleave", () => {
-    uploadArea.classList.remove("drag-over");
-  });
-
-  uploadArea.addEventListener("drop", (e) => {
-    e.preventDefault();
-    uploadArea.classList.remove("drag-over");
-    const files = e.dataTransfer.files;
-    if (files.length) {
-      handleFileUpload(files[0]);
-    }
   });
 
   fileInput.addEventListener("change", () => {
@@ -72,16 +70,27 @@ document.addEventListener("DOMContentLoaded", () => {
       uploadedImage.onload = () => {
         photoPreview.src = uploadedImage.src;
         hint.classList.remove("hidden");
-        photoPreview.style.transform = "";
+        resetTransforms();
       };
       uploadedImage.src = e.target.result;
     };
     reader.readAsDataURL(file);
   }
 
+  function resetTransforms() {
+    scale = 1;
+    rotation = 0;
+    updateTransforms();
+  }
+
+  function updateTransforms() {
+    photoPreview.style.transform = `scale(${scale}) rotate(${rotation}deg)`;
+  }
+
   cropToolBtn.addEventListener("click", () => {
     cropActive = !cropActive;
     cropBox.style.display = cropActive ? "block" : "none";
+    photoPreview.style.pointerEvents = cropActive ? "none" : "auto";
     if (cropActive) {
       const aspectRatio = photoWidthInput.value / photoHeightInput.value;
       cropBox.style.width = "100px";
@@ -91,5 +100,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Add more code here for zoom, rotate, drag, crop, generate canvas, spacing, margins, download, etc.
+  zoomInBtn.addEventListener("click", () => {
+    scale += 0.1;
+    updateTransforms();
+  });
+
+  zoomOutBtn.addEventListener("click", () => {
+    scale = Math.max(0.1, scale - 0.1);
+    updateTransforms();
+  });
+
+  rotateLeftBtn.addEventListener("click", () => {
+    rotation -= 90;
+    updateTransforms();
+  });
+
+  rotateRightBtn.addEventListener("click", () => {
+    rotation += 90;
+    updateTransforms();
+  });
+
+  hSpacingSlider.addEventListener("input", updateSpacingLabels);
+  vSpacingSlider.addEventListener("input", updateSpacingLabels);
+
+  // Additional logic for generating final canvas, cropping and download will follow.
 });
