@@ -7,10 +7,16 @@
     <link rel="stylesheet" href="style.css">
     <!-- Font Awesome CDN for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Google Fonts for extra friendliness -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
     <header>
-        <h1>Capture your moments perfectly, every time!</h1>
+        <h1>
+            <span style="font-size:1.7em; font-weight:700; letter-spacing:0.01em;">📸 Nishix Passport Photo Maker</span>
+            <br>
+            <span style="font-size:1.1em; font-weight:500; color:#e3f8ff;">Capture your moments perfectly, every time!</span>
+        </h1>
     </header>
 
     <main>
@@ -65,8 +71,9 @@
                 <label for="photo-upload" class="browse-btn"><i class="fa fa-folder-open"></i> Browse Files</label>
             </div>
             <div class="photo-preview-container hidden">
-                <div id="photo-preview-wrapper">
+                <div id="photo-preview-wrapper" tabindex="0">
                     <img id="photo-preview" alt="Preview">
+                    <!-- Overlay and crop box will be injected here by JS -->
                     <div id="crop-box" class="hidden"></div>
                 </div>
                 <div class="adjust-hint">Adjust, zoom, and crop your photo for the perfect fit...</div>
