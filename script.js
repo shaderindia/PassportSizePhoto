@@ -1,105 +1,229 @@
-// ... previous code up to arrangement/crop logic remains unchanged ...
+// ======= DOM Elements =======
+const unitSelect = document.getElementById('unit');
+const dpiInput = document.getElementById('dpi');
+const photoWidthInput = document.getElementById('photo-width');
+const photoHeightInput = document.getElementById('photo-height');
+const numPhotosInput = document.getElementById('num-photos');
+const pageSizeSelect = document.getElementById('page-size');
+const customPageSizeDiv = document.getElementById('custom-page-size');
+const customWidthInput = document.getElementById('custom-width');
+const customHeightInput = document.getElementById('custom-height');
+const hSpacingInput = document.getElementById('h-spacing');
+const vSpacingInput = document.getElementById('v-spacing');
+const marginTopInput = document.getElementById('margin-top');
+const marginBottomInput = document.getElementById('margin-bottom');
+const marginLeftInput = document.getElementById('margin-left');
+const marginRightInput = document.getElementById('margin-right');
+const photoUploadInput = document.getElementById('photo-upload');
+const photoPreviewContainer = document.querySelector('.photo-preview-container');
+const photoPreview = document.getElementById('photo-preview');
+const photoPreviewWrapper = document.getElementById('photo-preview-wrapper');
+const cropBox = document.getElementById('crop-box');
+const zoomInBtn = document.getElementById('zoom-in');
+const zoomOutBtn = document.getElementById('zoom-out');
+const rotateLeftBtn = document.getElementById('rotate-left');
+const rotateRightBtn = document.getElementById('rotate-right');
+const cropToggleBtn = document.getElementById('crop-toggle');
+const outputCanvas = document.getElementById('output-canvas');
+const formatSelect = document.getElementById('format');
+const downloadBtn = document.getElementById('download-btn');
+const downloadHQBtn = document.getElementById('download-hq-btn');
+const shareBtn = document.getElementById('share-btn');
 
-// ======= Multi-Page Navigation =======
-const pages = [
-    document.getElementById("page-1"),
-    document.getElementById("page-2"),
-    document.getElementById("page-3"),
-    document.getElementById("page-4"),
-];
-const prevBtn = document.getElementById("prev-page");
-const nextBtn = document.getElementById("next-page");
-let pageIdx = 0;
+// ======= State Variables =======
+let unit = 'mm';
+let dpi = 300;
+let photoWidth = 35;
+let photoHeight = 45;
+let pageSize = 'a4';
+let customPage = { width: 210, height: 297 };
+let uploadedImage = null;
+let imgObj = new window.Image();
+let imgLoaded = false;
+let imgURL = null;
 
-function showPage(idx) {
-    pages.forEach((page, i) => {
-        page.classList.toggle("hidden", i !== idx);
-    });
-    prevBtn.classList.toggle("hidden", idx === 0);
-    nextBtn.classList.toggle("hidden", idx === pages.length - 1);
-}
-prevBtn.addEventListener("click", () => {
-    if (pageIdx > 0) pageIdx--;
-    showPage(pageIdx);
-});
-nextBtn.addEventListener("click", () => {
-    if (pageIdx < pages.length - 1) pageIdx++;
-    showPage(pageIdx);
-});
-showPage(pageIdx);
+// Photo adjustment
+let zoom = 1.0;
+let rotate = 0;
+let pan = { x: 0, y: 0 }, isPanning = false, panStart = { x: 0, y: 0 };
+let cropActive = false;
+let cropRect = null; // { x, y, w, h }
 
-// ==== Arrangement Calculation with Correct Fit ====
-function renderCanvas() {
-    let dims = getPhotoDimsPx();
-    let pageDims = getPageDimsPx();
-    let spacing = getSpacingPx();
-    let margins = getMarginsPx();
+// Arrangement
+let numPhotos = 8;
 
-    // Maximize columns first (fill left to right, then top to bottom)
-    let maxCols = Math.floor((pageDims.width - margins.left - margins.right + spacing.h) / (dims.width + spacing.h));
-    maxCols = Math.max(1, maxCols);
-    let maxRows = Math.floor((pageDims.height - margins.top - margins.bottom + spacing.v) / (dims.height + spacing.v));
-    maxRows = Math.max(1, maxRows);
-    let maxPhotos = maxCols * maxRows;
-    let np = Math.max(1, Math.min(parseInt(numPhotosInput.value) || 8, maxPhotos));
+// ======= Helper Functions =======
+function mmToInch(mm) { return mm / 25.4; }
+function inchToMm(inch) { return inch * 25.4; }
+function mmToPx(mm, dpi) { return Math.round(mm * dpi / 25.4); }
+function inchToPx(inch, dpi) { return Math.round(inch * dpi); }
+function pxToMm(px, dpi) { return px * 25.4 / dpi; }
+function pxToInch(px, dpi) { return px / dpi; }
 
-    let cols = Math.min(maxCols, np);
-    let rows = Math.ceil(np / cols);
-
-    // Auto spacing/margin
-    if (autoSpacing) {
-        let freeW = pageDims.width - margins.left - margins.right - cols * dims.width;
-        spacing.h = cols > 1 ? Math.max(0, Math.floor(freeW / (cols - 1))) : 0;
-        hSpacingInput.value = unit === 'px' ? spacing.h : unit === 'mm' ? Math.round(spacing.h * 25.4 / dpi) : (spacing.h / dpi).toFixed(2);
+function updateFieldsForUnitChange(oldUnit, newUnit) {
+    function convert(val, from, to) {
+        if (from === to) return val;
+        // all values are assumed to be numbers
+        if (from === 'mm' && to === 'inch') return mmToInch(val);
+        if (from === 'inch' && to === 'mm') return inchToMm(val);
+        if (from === 'mm' && to === 'px') return mmToPx(val, dpi);
+        if (from === 'px' && to === 'mm') return pxToMm(val, dpi);
+        if (from === 'inch' && to === 'px') return inchToPx(val, dpi);
+        if (from === 'px' && to === 'inch') return pxToInch(val, dpi);
+        return val;
     }
-    if (autoMargins) {
-        let usedH = rows * dims.height + (rows - 1) * spacing.v;
-        let freeH = Math.max(0, pageDims.height - usedH);
-        margins.top = margins.bottom = Math.floor(freeH / 2);
-        marginTopInput.value = marginBottomInput.value = unit === 'px' ? margins.top : unit === 'mm' ? Math.round(margins.top * 25.4 / dpi) : (margins.top / dpi).toFixed(2);
-    }
-
-    // Set canvas size
-    outputCanvas.width = pageDims.width;
-    outputCanvas.height = pageDims.height;
-
-    let ctx = outputCanvas.getContext('2d');
-    ctx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, pageDims.width, pageDims.height);
-
-    // Draw each photo
-    if (imgLoaded) {
-        let imgW = imgObj.naturalWidth, imgH = imgObj.naturalHeight;
-        let cropParams = getCropParams(imgW, imgH);
-        let drawn = 0;
-        for (let r = 0; r < rows && drawn < np; r++) {
-            for (let c = 0; c < cols && drawn < np; c++, drawn++) {
-                let x = margins.left + c * (dims.width + spacing.h);
-                let y = margins.top + r * (dims.height + spacing.v);
-                ctx.save();
-                ctx.drawImage(
-                    imgObj,
-                    cropParams.sx, cropParams.sy, cropParams.sw, cropParams.sh,
-                    x, y, dims.width, dims.height
-                );
-                ctx.strokeStyle = "#2196f3";
-                ctx.setLineDash([6, 6]);
-                ctx.lineWidth = 1.5;
-                ctx.strokeRect(x, y, dims.width, dims.height);
-                ctx.setLineDash([]);
-                ctx.restore();
-            }
-        }
-    }
-    ctx.save();
-    ctx.strokeStyle = "#b0bec5";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(0, 0, pageDims.width, pageDims.height);
-    ctx.restore();
+    // Photo
+    photoWidthInput.value = +convert(+photoWidthInput.value, oldUnit, newUnit).toFixed(2);
+    photoHeightInput.value = +convert(+photoHeightInput.value, oldUnit, newUnit).toFixed(2);
+    // Page custom
+    customWidthInput.value = +convert(+customWidthInput.value, oldUnit, newUnit).toFixed(2);
+    customHeightInput.value = +convert(+customHeightInput.value, oldUnit, newUnit).toFixed(2);
+    // Spacing
+    hSpacingInput.value = +convert(+hSpacingInput.value, oldUnit, newUnit).toFixed(2);
+    vSpacingInput.value = +convert(+vSpacingInput.value, oldUnit, newUnit).toFixed(2);
+    // Margins
+    marginTopInput.value = +convert(+marginTopInput.value, oldUnit, newUnit).toFixed(2);
+    marginBottomInput.value = +convert(+marginBottomInput.value, oldUnit, newUnit).toFixed(2);
+    marginLeftInput.value = +convert(+marginLeftInput.value, oldUnit, newUnit).toFixed(2);
+    marginRightInput.value = +convert(+marginRightInput.value, oldUnit, newUnit).toFixed(2);
 }
 
-// ======= Crop Box: Drag to Move + Resize =======
+function getPhotoDimsPx() {
+    let w = parseFloat(photoWidthInput.value);
+    let h = parseFloat(photoHeightInput.value);
+    if (unit === 'mm') {
+        return { width: mmToPx(w, dpi), height: mmToPx(h, dpi) };
+    } else if (unit === 'inch') {
+        return { width: inchToPx(w, dpi), height: inchToPx(h, dpi) };
+    }
+    return { width: Math.round(w), height: Math.round(h) };
+}
+
+function getPageDimsPx() {
+    let w, h;
+    if (pageSize === 'a4') {
+        w = unit === 'mm' ? 210 : unit === 'inch' ? mmToInch(210) : mmToPx(210, dpi);
+        h = unit === 'mm' ? 297 : unit === 'inch' ? mmToInch(297) : mmToPx(297, dpi);
+    } else if (pageSize === '4r') {
+        w = unit === 'mm' ? 102 : unit === 'inch' ? mmToInch(102) : mmToPx(102, dpi);
+        h = unit === 'mm' ? 152 : unit === 'inch' ? mmToInch(152) : mmToPx(152, dpi);
+    } else {
+        w = parseFloat(customWidthInput.value) || 210;
+        h = parseFloat(customHeightInput.value) || 297;
+    }
+    if (unit === 'mm') return { width: mmToPx(w, dpi), height: mmToPx(h, dpi) };
+    if (unit === 'inch') return { width: inchToPx(w, dpi), height: inchToPx(h, dpi) };
+    return { width: Math.round(w), height: Math.round(h) };
+}
+
+function getSpacingPx() {
+    let h = parseFloat(hSpacingInput.value), v = parseFloat(vSpacingInput.value);
+    if (unit === 'mm') return { h: mmToPx(h, dpi), v: mmToPx(v, dpi) };
+    if (unit === 'inch') return { h: inchToPx(h, dpi), v: inchToPx(v, dpi) };
+    return { h: Math.round(h), v: Math.round(v) };
+}
+function getMarginsPx() {
+    function conv(x) {
+        if (unit === 'mm') return mmToPx(x, dpi);
+        if (unit === 'inch') return inchToPx(x, dpi);
+        return Math.round(x);
+    }
+    return {
+        top: conv(parseFloat(marginTopInput.value)),
+        bottom: conv(parseFloat(marginBottomInput.value)),
+        left: conv(parseFloat(marginLeftInput.value)),
+        right: conv(parseFloat(marginRightInput.value))
+    };
+}
+
+// ======= Event Handlers =======
+unitSelect.addEventListener('change', () => {
+    let oldUnit = unit;
+    unit = unitSelect.value;
+    // Show/hide DPI
+    document.getElementById('dpi-group').style.display = (unit === 'px') ? "block" : "block";
+    // Convert all fields to new unit
+    updateFieldsForUnitChange(oldUnit, unit);
+    renderCanvas();
+});
+
+dpiInput.addEventListener('input', () => {
+    dpi = parseInt(dpiInput.value) || 300;
+    renderCanvas();
+});
+photoWidthInput.addEventListener('input', renderCanvas);
+photoHeightInput.addEventListener('input', renderCanvas);
+numPhotosInput.addEventListener('input', renderCanvas);
+hSpacingInput.addEventListener('input', renderCanvas);
+vSpacingInput.addEventListener('input', renderCanvas);
+marginTopInput.addEventListener('input', renderCanvas);
+marginBottomInput.addEventListener('input', renderCanvas);
+marginLeftInput.addEventListener('input', renderCanvas);
+marginRightInput.addEventListener('input', renderCanvas);
+
+pageSizeSelect.addEventListener('change', () => {
+    pageSize = pageSizeSelect.value;
+    customPageSizeDiv.style.display = (pageSize === 'custom') ? 'flex' : 'none';
+    renderCanvas();
+});
+customWidthInput.addEventListener('input', renderCanvas);
+customHeightInput.addEventListener('input', renderCanvas);
+
+// ======= Photo Upload, Preview, Crop =======
+photoUploadInput.addEventListener('change', (e) => {
+    if (photoUploadInput.files && photoUploadInput.files[0]) {
+        let file = photoUploadInput.files[0];
+        if (!file.type.startsWith('image/')) return;
+        if (imgURL) URL.revokeObjectURL(imgURL);
+        imgURL = URL.createObjectURL(file);
+        imgObj.src = imgURL;
+        imgObj.onload = () => {
+            imgLoaded = true;
+            zoom = 1.0;
+            rotate = 0;
+            pan = { x: 0, y: 0 };
+            photoPreviewContainer.classList.remove('hidden');
+            photoPreview.src = imgURL;
+            cropRect = null;
+            cropActive = false;
+            cropBox.classList.add('hidden');
+            showCropUI(false);
+            updatePreviewTransform();
+            renderCanvas();
+        };
+    }
+});
+zoomInBtn.addEventListener('click', () => {
+    zoom = Math.min(zoom * 1.11, 7);
+    updatePreviewTransform();
+    renderCanvas();
+});
+zoomOutBtn.addEventListener('click', () => {
+    zoom = Math.max(zoom / 1.11, 0.2);
+    updatePreviewTransform();
+    renderCanvas();
+});
+rotateLeftBtn.addEventListener('click', () => {
+    rotate = (rotate - 90) % 360;
+    updatePreviewTransform();
+    renderCanvas();
+});
+rotateRightBtn.addEventListener('click', () => {
+    rotate = (rotate + 90) % 360;
+    updatePreviewTransform();
+    renderCanvas();
+});
+
+let cropOverlay = null;
+function showCropUI(show) {
+    if (!cropOverlay) {
+        cropOverlay = document.createElement('div');
+        cropOverlay.className = 'crop-overlay';
+        photoPreviewWrapper.appendChild(cropOverlay);
+    }
+    cropOverlay.style.display = show ? 'block' : 'none';
+    cropBox.classList.toggle('active', show);
+}
 function addCropHandles() {
     cropBox.innerHTML = '';
     ['nw','n','ne','e','se','s','sw','w'].forEach(pos => {
@@ -114,17 +238,53 @@ function addCropHandles() {
     size.id = 'crop-size-indicator';
     cropBox.appendChild(size);
 }
-
-let cropDragMode = null; // 'move' or one of 'nw','n','ne','e','se','s','sw','w'
+function updateCropSizeIndicator() {
+    const dims = getPhotoDimsPx();
+    let w = dims.width, h = dims.height;
+    let unitStr = unit;
+    if (cropRect) {
+        if (unit === 'px') {
+            w = Math.round(cropRect.w);
+            h = Math.round(cropRect.h);
+        } else if (unit === 'mm') {
+            w = (cropRect.w * 25.4 / dpi).toFixed(1);
+            h = (cropRect.h * 25.4 / dpi).toFixed(1);
+        } else {
+            w = (cropRect.w / dpi).toFixed(2);
+            h = (cropRect.h / dpi).toFixed(2);
+        }
+    }
+    document.getElementById('crop-size-indicator').textContent = `${w} × ${h} ${unitStr}`;
+}
+cropToggleBtn.addEventListener('click', () => {
+    cropActive = !cropActive;
+    cropToggleBtn.classList.toggle('active', cropActive);
+    showCropUI(cropActive);
+    if (cropActive) {
+        let pvW = photoPreviewWrapper.clientWidth, pvH = photoPreviewWrapper.clientHeight;
+        let dims = getPhotoDimsPx();
+        let asp = dims.width / dims.height;
+        let w = pvW * 0.7, h = pvH * 0.7;
+        if (w / h > asp) w = h * asp; else h = w / asp;
+        cropRect = { x: (pvW - w)/2, y: (pvH-h)/2, w: w, h: h };
+        updateCropBox();
+        cropBox.classList.remove('hidden');
+        addCropHandles();
+        updateCropSizeIndicator();
+    } else {
+        cropBox.classList.add('hidden');
+        showCropUI(false);
+    }
+    updatePreviewTransform();
+});
+let cropDragMode = null;
 let cropStartMouse = null;
 let cropStartRect = null;
-
 function getPointer(e) {
     if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
     return { x: e.clientX, y: e.clientY };
 }
 function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
-
 function cropPointerDown(e) {
     if (!cropActive) return;
     e.preventDefault();
@@ -147,9 +307,7 @@ function cropPointerMove(e) {
     let dims = getPhotoDimsPx();
     let asp = dims.width / dims.height;
     let minW = 36, minH = minW / asp;
-
     let r = { ...cropStartRect };
-
     if (cropDragMode === 'move') {
         r.x = clamp(cropStartRect.x + dx, 0, pvW - r.w);
         r.y = clamp(cropStartRect.y + dy, 0, pvH - r.h);
@@ -211,5 +369,186 @@ function attachCropListeners() {
     window.addEventListener('touchend', cropPointerUp);
 }
 attachCropListeners();
+function updateCropBox() {
+    if (!cropRect) return;
+    cropBox.style.left = cropRect.x + 'px';
+    cropBox.style.top = cropRect.y + 'px';
+    cropBox.style.width = cropRect.w + 'px';
+    cropBox.style.height = cropRect.h + 'px';
+    if (!cropBox.querySelector('.crop-handle')) addCropHandles();
+    updateCropSizeIndicator();
+}
+photoPreviewWrapper.addEventListener('mousedown', (e) => {
+    if (!imgLoaded || cropActive) return;
+    isPanning = true;
+    panStart = { x: e.clientX, y: e.clientY };
+});
+photoPreviewWrapper.addEventListener('mousemove', (e) => {
+    if (isPanning && !cropActive) {
+        let dx = e.clientX - panStart.x, dy = e.clientY - panStart.y;
+        pan.x += dx;
+        pan.y += dy;
+        panStart = { x: e.clientX, y: e.clientY };
+        updatePreviewTransform();
+        renderCanvas();
+    }
+});
+window.addEventListener('mouseup', () => isPanning = false);
 
-// ==== The rest of your code (including preview, download, share, etc) remains unchanged ====
+function updatePreviewTransform() {
+    if (!imgLoaded) return;
+    photoPreview.style.transform = `translate(${pan.x}px,${pan.y}px) scale(${zoom}) rotate(${rotate}deg)`;
+    if (cropActive && cropRect) updateCropBox();
+}
+
+// ======= Canvas Rendering =======
+function renderCanvas() {
+    let dims = getPhotoDimsPx();
+    let pageDims = getPageDimsPx();
+    let spacing = getSpacingPx();
+    let margins = getMarginsPx();
+
+    let np = Math.max(1, parseInt(numPhotosInput.value) || 8);
+    let maxCols = Math.floor((pageDims.width - margins.left - margins.right + spacing.h) / (dims.width + spacing.h));
+    maxCols = Math.max(1, maxCols);
+    let maxRows = Math.floor((pageDims.height - margins.top - margins.bottom + spacing.v) / (dims.height + spacing.v));
+    maxRows = Math.max(1, maxRows);
+    let maxPhotos = maxCols * maxRows;
+    np = Math.min(np, maxPhotos);
+
+    let cols = Math.min(maxCols, np);
+    let rows = Math.ceil(np / cols);
+
+    outputCanvas.width = pageDims.width;
+    outputCanvas.height = pageDims.height;
+
+    let ctx = outputCanvas.getContext('2d');
+    ctx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, pageDims.width, pageDims.height);
+
+    if (imgLoaded) {
+        let imgW = imgObj.naturalWidth, imgH = imgObj.naturalHeight;
+        let cropParams = getCropParams(imgW, imgH);
+        let drawn = 0;
+        for (let r = 0; r < rows && drawn < np; r++) {
+            for (let c = 0; c < cols && drawn < np; c++, drawn++) {
+                let x = margins.left + c * (dims.width + spacing.h);
+                let y = margins.top + r * (dims.height + spacing.v);
+                ctx.save();
+                ctx.drawImage(
+                    imgObj,
+                    cropParams.sx, cropParams.sy, cropParams.sw, cropParams.sh,
+                    x, y, dims.width, dims.height
+                );
+                ctx.strokeStyle = "#2196f3";
+                ctx.setLineDash([6, 6]);
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(x, y, dims.width, dims.height);
+                ctx.setLineDash([]);
+                ctx.restore();
+            }
+        }
+    }
+    ctx.save();
+    ctx.strokeStyle = "#b0bec5";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 0, pageDims.width, pageDims.height);
+    ctx.restore();
+}
+
+function getCropParams(imgW, imgH) {
+    if (cropActive && cropRect) {
+        let pvW = photoPreviewWrapper.clientWidth;
+        let pvH = photoPreviewWrapper.clientHeight;
+        let scale = Math.min(pvW / imgW, pvH / imgH) * zoom;
+        let offsetX = (pvW - imgW * scale) / 2 + pan.x;
+        let offsetY = (pvH - imgH * scale) / 2 + pan.y;
+        let cropX = cropRect.x - offsetX;
+        let cropY = cropRect.y - offsetY;
+        let cropW = cropRect.w;
+        let cropH = cropRect.h;
+        let sx = cropX / scale;
+        let sy = cropY / scale;
+        let sw = cropW / scale;
+        let sh = cropH / scale;
+        sx = Math.max(0, sx);
+        sy = Math.max(0, sy);
+        sw = Math.max(10, Math.min(sw, imgW - sx));
+        sh = Math.max(10, Math.min(sh, imgH - sy));
+        return { sx, sy, sw, sh };
+    }
+    let pvW = photoPreviewWrapper.clientWidth, pvH = photoPreviewWrapper.clientHeight;
+    let scale = Math.min(pvW / imgW, pvH / imgH) * zoom;
+    let offsetX = (pvW - imgW * scale) / 2 + pan.x;
+    let offsetY = (pvH - imgH * scale) / 2 + pan.y;
+    let sx = Math.max(0, -offsetX / scale);
+    let sy = Math.max(0, -offsetY / scale);
+    let sw = Math.min(imgW - sx, pvW / scale);
+    let sh = Math.min(imgH - sy, pvH / scale);
+    return { sx, sy, sw, sh };
+}
+
+// ======= Download Handling =======
+downloadBtn.addEventListener('click', () => {
+    let format = formatSelect.value;
+    let link = document.createElement('a');
+    link.download = `passport-photo.${format}`;
+    link.href = outputCanvas.toDataURL(`image/${format === 'jpg' ? 'jpeg' : 'png'}`, 0.85);
+    link.click();
+});
+downloadHQBtn.addEventListener('click', () => {
+    let origW = outputCanvas.width, origH = outputCanvas.height;
+    outputCanvas.width = origW * 2;
+    outputCanvas.height = origH * 2;
+    renderCanvas();
+    let format = formatSelect.value;
+    let link = document.createElement('a');
+    link.download = `passport-photo-hq.${format}`;
+    link.href = outputCanvas.toDataURL(`image/${format === 'jpg' ? 'jpeg' : 'png'}`, 1.0);
+    link.click();
+    outputCanvas.width = origW;
+    outputCanvas.height = origH;
+    renderCanvas();
+});
+
+// ======= Share Button =======
+shareBtn.addEventListener('click', async () => {
+    const shareData = {
+        title: "Nishix Passport Photo Maker",
+        text: "Create passport photos easily! Try Nishix Passport Photo Maker.",
+        url: window.location.href
+    };
+    if (navigator.share) {
+        try {
+            await navigator.share(shareData);
+        } catch (e) { /* ignore */ }
+    } else {
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            shareBtn.innerHTML = '<i class="fa fa-check"></i> Link Copied!';
+            setTimeout(() => {
+                shareBtn.innerHTML = '<i class="fa fa-share-alt"></i> Share this App';
+            }, 1800);
+        } catch (e) {
+            prompt("Copy this link:", window.location.href);
+        }
+    }
+});
+
+// ======= Initial Setup =======
+function init() {
+    // Default values for all units
+    photoWidthInput.value = 35;
+    photoHeightInput.value = 45;
+    customWidthInput.value = 210;
+    customHeightInput.value = 297;
+    hSpacingInput.value = 10;
+    vSpacingInput.value = 10;
+    marginTopInput.value = 10;
+    marginBottomInput.value = 10;
+    marginLeftInput.value = 10;
+    marginRightInput.value = 10;
+    renderCanvas();
+}
+init();
