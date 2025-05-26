@@ -6,7 +6,8 @@
     <title>Nishix Passport Photo Maker</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="icon" href="https://via.placeholder.com/32" type="image/x-icon"> </head>
+    <link rel="icon" href="https://via.placeholder.com/32" type="image/x-icon">
+</head>
 <body>
     <div class="app-container">
         <h1 class="motivation-message">"Capture your moments perfectly, every time!"</h1>
@@ -18,14 +19,14 @@
         <div class="section units-section">
             <h3>1. Choose Units</h3>
             <div class="radio-group">
-                <input type="radio" id="unitPixel" name="units" value="pixel" checked>
+                <input type="radio" id="unitPixel" name="units" value="pixel">
                 <label for="unitPixel">Pixel</label>
-                <input type="radio" id="unitMM" name="units" value="mm">
+                <input type="radio" id="unitMM" name="units" value="mm" checked>
                 <label for="unitMM">Millimeter (mm)</label>
                 <input type="radio" id="unitInch" name="units" value="inch">
                 <label for="unitInch">Inch</label>
             </div>
-            <div class="pixel-density-group" id="pixelDensityGroup">
+            <div class="pixel-density-group" id="pixelDensityGroup" style="display: none;">
                 <label for="pixelDensity">Pixel Density (DPI):</label>
                 <input type="number" id="pixelDensity" value="300" min="50" max="1200">
             </div>
@@ -56,7 +57,7 @@
                 <input type="radio" id="pageCustom" name="pageSize" value="custom">
                 <label for="pageCustom">Custom</label>
             </div>
-            <div class="custom-page-size" id="customPageSize">
+            <div class="custom-page-size" id="customPageSize" style="display: none;">
                 <div class="input-group">
                     <label for="customPageWidth">Width:</label>
                     <input type="number" id="customPageWidth" value="0">
@@ -77,7 +78,7 @@
                 <p>Drag & Drop your photo here or <a href="#" id="browsePhotos">Browse Files</a></p>
                 <p class="upload-note">Supports JPG, PNG, and other common image formats.</p>
             </div>
-            <div class="photo-preview-container" id="photoPreviewContainer">
+            <div class="photo-preview-container" id="photoPreviewContainer" style="display: none;">
                 <img id="photoPreview" src="" alt="Uploaded Photo" style="display: none;">
                 <div class="controls" id="photoControls" style="display: none;">
                     <button id="zoomIn"><i class="fas fa-search-plus"></i></button>
@@ -87,10 +88,13 @@
                     <button id="cropPhoto"><i class="fas fa-crop"></i></button>
                 </div>
                 <div class="cropping-overlay" id="croppingOverlay" style="display: none;">
-                    <div class="crop-box" id="cropBox"></div>
+                    <div class="crop-box" id="cropBox">
+                        <div class="handle top-left"></div>
+                        <div class="handle bottom-right"></div>
+                    </div>
                 </div>
             </div>
-            <p class="photo-hint" id="photoHint" style="display: none;">Adjust, zoom, and crop your photo for the perfect fit.</p>
+            <p class="photo-hint" id="photoHint" style="display: none;">Adjust, zoom, and crop your photo for the perfect fit. <br>Drag the photo to pan, use the crop tool to define the area.</p>
         </div>
 
         <div class="section photo-arrangement-section">
@@ -104,9 +108,10 @@
                 <h4>Spacing</h4>
                 <div class="toggle-switch">
                     <input type="checkbox" id="autoSpacing" checked>
-                    <label for="autoSpacing" class="toggle-label">Automatic Spacing</label>
+                    <label for="autoSpacing" class="toggle-label"></label>
+                    <span>Automatic Spacing</span>
                 </div>
-                <div class="manual-spacing" id="manualSpacing">
+                <div class="manual-spacing" id="manualSpacing" style="display: none;">
                     <div class="input-group">
                         <label for="horizontalSpacing">Horizontal Spacing:</label>
                         <input type="range" id="horizontalSpacing" min="0" max="20" value="5">
@@ -124,9 +129,10 @@
                 <h4>Margins</h4>
                 <div class="toggle-switch">
                     <input type="checkbox" id="autoMargin" checked>
-                    <label for="autoMargin" class="toggle-label">Automatic Margins</label>
+                    <label for="autoMargin" class="toggle-label"></label>
+                    <span>Automatic Margins</span>
                 </div>
-                <div class="manual-margin" id="manualMargin">
+                <div class="manual-margin" id="manualMargin" style="display: none;">
                     <div class="input-group">
                         <label for="topMargin">Top Margin:</label>
                         <input type="range" id="topMargin" min="0" max="50" value="10">
