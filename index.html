@@ -14,58 +14,91 @@
         <h1>
             <span style="font-size:1.7em; font-weight:700; letter-spacing:0.01em;">📸 Nishix Passport Photo Maker</span>
             <br>
-            <span style="font-size:1.1em; font-weight:500; color:#e3f8ff;">Capture your moments perfectly, every time!</span>
+            <span style="font-size:1.1em; font-weight:500; color:#e3f8ff;">All-in-one, easy, accurate!</span>
         </h1>
     </header>
 
     <main>
-        <!-- PAGE 1 -->
-        <section class="card page" id="page-1">
-            <h2>1. Unit Selection</h2>
-            <div class="form-group">
-                <label for="unit">Select Unit</label>
+        <section class="card">
+            <h2>Photo & Page Settings</h2>
+            <div class="form-group flex-row">
+                <label for="unit">Units</label>
                 <select id="unit">
                     <option value="mm">Millimeters (mm)</option>
                     <option value="inch">Inches (inch)</option>
                     <option value="px">Pixels (px)</option>
                 </select>
+                <div class="dpi-group" id="dpi-group">
+                    <label for="dpi">DPI</label>
+                    <input type="number" id="dpi" value="300" min="50" max="1200">
+                </div>
             </div>
-            <div class="form-group dpi-group hidden" id="dpi-group">
-                <label for="dpi">DPI</label>
-                <input type="number" id="dpi" value="300" min="50" max="1200">
+            <div class="flex-row gap">
+                <div>
+                    <label for="photo-width">Photo Width</label>
+                    <input type="number" id="photo-width" min="1" step="0.01">
+                </div>
+                <div>
+                    <label for="photo-height">Photo Height</label>
+                    <input type="number" id="photo-height" min="1" step="0.01">
+                </div>
+                <div>
+                    <label for="num-photos">Number</label>
+                    <input type="number" id="num-photos" min="1" value="8" style="width:80px">
+                </div>
             </div>
-            <div class="form-group photo-dimensions">
-                <label for="photo-width">Photo Width (<span class="unit-label">mm</span>)</label>
-                <input type="number" id="photo-width" min="1" value="35">
-                <label for="photo-height">Photo Height (<span class="unit-label">mm</span>)</label>
-                <input type="number" id="photo-height" min="1" value="45">
-                <div class="hint">Standard passport photo size is 35mm x 45mm</div>
+            <div class="flex-row gap" style="margin-top:1em;">
+                <div>
+                    <label for="page-size">Page Size</label>
+                    <select id="page-size">
+                        <option value="a4">A4 (210 x 297 mm)</option>
+                        <option value="4r">4R (102 x 152 mm)</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+                <div id="custom-page-size" class="flex-row gap" style="display:none;">
+                    <label for="custom-width">W</label>
+                    <input type="number" id="custom-width" min="1" step="0.01" style="width:80px">
+                    <label for="custom-height">H</label>
+                    <input type="number" id="custom-height" min="1" step="0.01" style="width:80px">
+                </div>
             </div>
         </section>
 
-        <section class="card page" id="page-2">
-            <h2>2. Page Size</h2>
-            <div class="form-group radio-group">
-                <label>
-                    <input type="radio" name="page-size" value="a4" checked> A4 (210 x 297 mm)
-                </label>
-                <label>
-                    <input type="radio" name="page-size" value="4r"> 4R (102 x 152 mm)
-                </label>
-                <label>
-                    <input type="radio" name="page-size" value="custom"> Custom
-                </label>
+        <section class="card" id="margin-spacing-section">
+            <h2>Spacing & Margins (Manual)</h2>
+            <div class="flex-row gap">
+                <div>
+                    <label for="h-spacing">Horizontal Spacing</label>
+                    <input type="number" id="h-spacing" min="0" step="0.01" value="10">
+                </div>
+                <div>
+                    <label for="v-spacing">Vertical Spacing</label>
+                    <input type="number" id="v-spacing" min="0" step="0.01" value="10">
+                </div>
             </div>
-            <div class="form-group custom-page-size hidden">
-                <label for="custom-width">Width (<span class="unit-label">mm</span>)</label>
-                <input type="number" id="custom-width" min="1" value="210">
-                <label for="custom-height">Height (<span class="unit-label">mm</span>)</label>
-                <input type="number" id="custom-height" min="1" value="297">
+            <div class="flex-row gap" style="margin-top:1em;">
+                <div>
+                    <label for="margin-top">Top Margin</label>
+                    <input type="number" id="margin-top" min="0" step="0.01" value="10">
+                </div>
+                <div>
+                    <label for="margin-bottom">Bottom Margin</label>
+                    <input type="number" id="margin-bottom" min="0" step="0.01" value="10">
+                </div>
+                <div>
+                    <label for="margin-left">Left Margin</label>
+                    <input type="number" id="margin-left" min="0" step="0.01" value="10">
+                </div>
+                <div>
+                    <label for="margin-right">Right Margin</label>
+                    <input type="number" id="margin-right" min="0" step="0.01" value="10">
+                </div>
             </div>
         </section>
 
-        <section class="card page" id="page-3">
-            <h2>3. Photo Upload</h2>
+        <section class="card">
+            <h2>Photo Upload & Crop</h2>
             <div class="form-group">
                 <input type="file" id="photo-upload" accept="image/*">
                 <label for="photo-upload" class="browse-btn"><i class="fa fa-folder-open"></i> Browse Files</label>
@@ -75,7 +108,7 @@
                     <img id="photo-preview" alt="Preview">
                     <div id="crop-box" class="hidden"></div>
                 </div>
-                <div class="adjust-hint">Adjust, zoom, and crop your photo for the perfect fit...</div>
+                <div class="adjust-hint">Zoom, pan, crop. Use handles or drag the box!</div>
                 <div class="adjust-tools">
                     <button id="zoom-in" title="Zoom In"><i class="fa fa-search-plus"></i></button>
                     <button id="zoom-out" title="Zoom Out"><i class="fa fa-search-minus"></i></button>
@@ -86,55 +119,9 @@
             </div>
         </section>
 
-        <!-- Navigation -->
-        <div class="nav-btns">
-            <button id="prev-page" class="hidden"><i class="fa fa-angle-left"></i> Previous</button>
-            <button id="next-page"><span>Next</span> <i class="fa fa-angle-right"></i></button>
-        </div>
-
-        <!-- PAGE 4 (Arrangement + Output) -->
-        <section class="card page hidden" id="page-4">
-            <h2>4. Arrangement & Download</h2>
-            <div class="form-group">
-                <label for="num-photos">Number of Photos</label>
-                <input type="number" id="num-photos" min="1" value="8">
-            </div>
-            <div class="form-group arrangement-section">
-                <label>Spacing</label>
-                <label class="switch">
-                    <input type="checkbox" id="auto-spacing" checked>
-                    <span class="slider"></span>
-                </label>
-                <span>Automatic Spacing</span>
-                <div id="spacing-controls" class="hidden">
-                    <label for="h-spacing">Horizontal (<span class="unit-label">mm</span>)</label>
-                    <input type="range" id="h-spacing" min="0" max="50" value="15">
-                    <label for="v-spacing">Vertical (<span class="unit-label">mm</span>)</label>
-                    <input type="range" id="v-spacing" min="0" max="50" value="15">
-                </div>
-            </div>
-            <div class="form-group arrangement-section">
-                <label>Margins</label>
-                <label class="switch">
-                    <input type="checkbox" id="auto-margins" checked>
-                    <span class="slider"></span>
-                </label>
-                <span>Automatic Margins</span>
-                <div id="margin-controls" class="hidden">
-                    <label for="margin-top">Top Margin (<span class="unit-label">mm</span>)</label>
-                    <input type="range" id="margin-top" min="0" max="50" value="15">
-                    <label for="margin-bottom">Bottom Margin (<span class="unit-label">mm</span>)</label>
-                    <input type="range" id="margin-bottom" min="0" max="50" value="15">
-                    <label for="margin-left">Left Margin (<span class="unit-label">mm</span>)</label>
-                    <input type="range" id="margin-left" min="0" max="50" value="15">
-                    <label for="margin-right">Right Margin (<span class="unit-label">mm</span>)</label>
-                    <input type="range" id="margin-right" min="0" max="50" value="15">
-                </div>
-            </div>
-            <div class="form-group">
-                <h3 style="margin-bottom:.5em;margin-top:1.1em;">Live Sheet Preview</h3>
-                <canvas id="output-canvas"></canvas>
-            </div>
+        <section class="card" id="output-section">
+            <h2>Sheet Preview & Download</h2>
+            <canvas id="output-canvas"></canvas>
             <div class="output-controls">
                 <label for="format">Format</label>
                 <select id="format">
@@ -142,7 +129,7 @@
                     <option value="png">PNG</option>
                 </select>
                 <button id="download-btn"><i class="fa fa-download"></i> Download</button>
-                <button id="download-hq-btn"><i class="fa fa-download"></i> Download High Quality</button>
+                <button id="download-hq-btn"><i class="fa fa-download"></i> High Quality</button>
             </div>
         </section>
     </main>
