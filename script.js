@@ -1,3 +1,4 @@
+// ========== Initialization and Variables ==========
 const unitSelect = document.getElementById('unit');
 const dpiInput = document.getElementById('dpi');
 const photoWidthInput = document.getElementById('photo-width');
@@ -37,6 +38,8 @@ let imgURL = null;
 let zoom = 1.0, rotate = 0, pan = { x: 0, y: 0 };
 let cropActive = false, cropRect = null;
 
+// ========== Unit Conversion ==========
+
 function mmToInch(mm) { return mm / 25.4; }
 function inchToMm(inch) { return inch * 25.4; }
 function mmToPx(mm, dpi) { return mm * dpi / 25.4; }
@@ -44,6 +47,7 @@ function inchToPx(inch, dpi) { return inch * dpi; }
 function pxToMm(px, dpi) { return px * 25.4 / dpi; }
 function pxToInch(px, dpi) { return px / dpi; }
 
+// ========== Unit Change Sync ==========
 function updateFieldsForUnitChange(oldUnit, newUnit) {
   function convert(val, from, to) {
     if (from === to) return val;
@@ -108,6 +112,9 @@ function getMarginsPx() {
     right: conv(parseFloat(marginRightInput.value) || 0)
   };
 }
+
+// ========== UI Event Handlers ==========
+
 unitSelect.addEventListener('change', () => {
   let oldUnit = unit;
   unit = unitSelect.value;
@@ -139,6 +146,7 @@ pageSizeSelect.addEventListener('change', () => {
 });
 customWidthInput.addEventListener('input', renderCanvas);
 customHeightInput.addEventListener('input', renderCanvas);
+
 photoUploadInput.addEventListener('change', (e) => {
   if (photoUploadInput.files && photoUploadInput.files[0]) {
     let file = photoUploadInput.files[0];
@@ -172,6 +180,9 @@ rotateRightBtn.addEventListener('click', () => {
   updatePreviewTransform();
   renderCanvas();
 });
+
+// ========== Crop UI ==========
+
 let cropOverlay = null;
 function showCropUI(show) {
   if (!cropOverlay) {
@@ -330,6 +341,8 @@ function updateCropBox() {
   if (!cropBox.querySelector('.crop-handle')) addCropHandles();
   updateCropSizeIndicator();
 }
+
+// ========== Image Pan & Zoom ==========
 let isImgPanning = false, lastPan = { x: 0, y: 0 };
 photoPreviewWrapper.addEventListener('pointerdown', (e) => {
   if (!imgLoaded) return;
@@ -390,37 +403,38 @@ function updatePreviewTransform() {
   photoPreview.style.transform = `translate(${pan.x}px,${pan.y}px) scale(${zoom}) rotate(${rotate}deg)`;
   if (cropActive && cropRect) updateCropBox();
 }
+
+// ========== Crop Mapping ==========
 function getCropParams(imgW, imgH) {
   if (cropActive && cropRect) {
-    // Compute the cropping rectangle in preview coordinates, map to original image coordinates
+    // Map cropRect on preview to image coordinates, accounting for pan/zoom/rotate
     let pvW = photoPreviewWrapper.clientWidth;
     let pvH = photoPreviewWrapper.clientHeight;
-    // Undo pan/zoom/rotate for mapping
     let scale = Math.min(pvW / imgW, pvH / imgH) * zoom;
     let rad = rotate * Math.PI / 180;
-    // Offset in preview
     let offsetX = (pvW - imgW * scale) / 2 + pan.x;
     let offsetY = (pvH - imgH * scale) / 2 + pan.y;
-    // Center of cropRect
-    let cropCenterX = cropRect.x + cropRect.w/2 - pvW/2;
-    let cropCenterY = cropRect.y + cropRect.h/2 - pvH/2;
-    // Undo rotation (rotate center back)
-    let unrotX = cropCenterX * Math.cos(-rad) - cropCenterY * Math.sin(-rad);
-    let unrotY = cropCenterX * Math.sin(-rad) + cropCenterY * Math.cos(-rad);
-    // Top-left in image space
-    let cropX = pvW/2 + unrotX - cropRect.w/2 - offsetX;
-    let cropY = pvH/2 + unrotY - cropRect.h/2 - offsetY;
-    let sx = cropX / scale;
-    let sy = cropY / scale;
-    let sw = cropRect.w / scale;
-    let sh = cropRect.h / scale;
-    sx = Math.max(0, sx);
-    sy = Math.max(0, sy);
-    sw = Math.max(10, Math.min(sw, imgW - sx));
-    sh = Math.max(10, Math.min(sh, imgH - sy));
+    function inverseTransform(px, py) {
+      let cx = px - pvW/2;
+      let cy = py - pvH/2;
+      let ix = cx * Math.cos(-rad) - cy * Math.sin(-rad);
+      let iy = cx * Math.sin(-rad) + cy * Math.cos(-rad);
+      ix = ix + pvW/2 - offsetX;
+      iy = iy + pvH/2 - offsetY;
+      return { x: ix / scale, y: iy / scale };
+    }
+    let p1 = inverseTransform(cropRect.x, cropRect.y);
+    let p2 = inverseTransform(cropRect.x + cropRect.w, cropRect.y);
+    let p3 = inverseTransform(cropRect.x, cropRect.y + cropRect.h);
+    let p4 = inverseTransform(cropRect.x + cropRect.w, cropRect.y + cropRect.h);
+    let xs = [p1.x,p2.x,p3.x,p4.x], ys = [p1.y,p2.y,p3.y,p4.y];
+    let sx = Math.max(0, Math.min(...xs));
+    let sy = Math.max(0, Math.min(...ys));
+    let sw = Math.min(imgW, Math.max(...xs)) - sx;
+    let sh = Math.min(imgH, Math.max(...ys)) - sy;
     return { sx, sy, sw, sh };
   }
-  // Default: show the visible part of the image
+  // default
   let pvW = photoPreviewWrapper.clientWidth, pvH = photoPreviewWrapper.clientHeight;
   let scale = Math.min(pvW / imgW, pvH / imgH) * zoom;
   let offsetX = (pvW - imgW * scale) / 2 + pan.x;
@@ -432,106 +446,7 @@ function getCropParams(imgW, imgH) {
   return { sx, sy, sw, sh };
 }
 
-function renderCanvas() {
-  let dims = getPhotoDimsPx();
-  let pageDims = getPageDimsPx();
-  let spacing = getSpacingPx();
-  let margins = getMarginsPx();
-  let np = Math.max(1, parseInt(numPhotosInput.value) || 8);
-  let maxCols = Math.floor((pageDims.width - margins.left - margins.right + spacing.h) / (dims.width + spacing.h));
-  maxCols = Math.max(1, maxCols);
-  let maxRows = Math.floor((pageDims.height - margins.top - margins.bottom + spacing.v) / (dims.height + spacing.v));
-  maxRows = Math.max(1, maxRows);
-  let maxPhotos = maxCols * maxRows;
-  np = Math.min(np, maxPhotos);
-  let cols = Math.min(maxCols, np);
-  let rows = Math.ceil(np / cols);
-
-  if (autocenterCheck.checked) {
-    let usedW = cols * dims.width + (cols - 1) * spacing.h;
-    let usedH = rows * dims.height + (rows - 1) * spacing.v;
-    let freeW = Math.max(0, pageDims.width - usedW);
-    let freeH = Math.max(0, pageDims.height - usedH);
-    margins.left = margins.right = Math.floor(freeW / 2);
-    margins.top = margins.bottom = Math.floor(freeH / 2);
-    marginTopInput.value = marginBottomInput.value = (unit === 'px') ? margins.top : (unit === 'mm' ? (margins.top*25.4/dpi).toFixed(2) : (margins.top/dpi).toFixed(2));
-    marginLeftInput.value = marginRightInput.value = (unit === 'px') ? margins.left : (unit === 'mm' ? (margins.left*25.4/dpi).toFixed(2) : (margins.left/dpi).toFixed(2));
-  }
-
-  outputCanvas.width = pageDims.width;
-  outputCanvas.height = pageDims.height;
-  let ctx = outputCanvas.getContext('2d');
-  ctx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0, 0, pageDims.width, pageDims.height);
-
-  // Dotted cut lines in the center of spacing (before drawing photos)
-  ctx.save();
-  ctx.strokeStyle = "#e57300";
-  ctx.setLineDash([5, 7]);
-  ctx.lineWidth = 1.15;
-
-  // Vertical cut lines
-  for (let c = 1; c < cols; c++) {
-    let x = margins.left + c * dims.width + (c - 0.5) * spacing.h - spacing.h/2;
-    ctx.beginPath();
-    ctx.moveTo(x, margins.top);
-    ctx.lineTo(x, pageDims.height - margins.bottom);
-    ctx.stroke();
-  }
-  // Horizontal cut lines
-  for (let r = 1; r < rows; r++) {
-    let y = margins.top + r * dims.height + (r - 0.5) * spacing.v - spacing.v/2;
-    ctx.beginPath();
-    ctx.moveTo(margins.left, y);
-    ctx.lineTo(pageDims.width - margins.right, y);
-    ctx.stroke();
-  }
-  ctx.restore();
-
-  // Draw photos with thin black border
-  if (imgLoaded) {
-    let imgW = imgObj.naturalWidth, imgH = imgObj.naturalHeight;
-    let cropParams = getCropParams(imgW, imgH);
-    let drawn = 0;
-    for (let r = 0; r < rows && drawn < np; r++) {
-      for (let c = 0; c < cols && drawn < np; c++, drawn++) {
-        let x = margins.left + c * (dims.width + spacing.h);
-        let y = margins.top + r * (dims.height + spacing.v);
-        ctx.save();
-        ctx.drawImage(
-          imgObj,
-          cropParams.sx, cropParams.sy, cropParams.sw, cropParams.sh,
-          x, y, dims.width, dims.height
-        );
-        // Thin black border
-        ctx.save();
-        ctx.strokeStyle = "#111";
-        ctx.lineWidth = 1.2;
-        ctx.setLineDash([]);
-        ctx.strokeRect(x + 0.5, y + 0.5, dims.width - 1, dims.height - 1);
-        ctx.restore();
-        ctx.restore();
-      }
-    }
-  }
-  ctx.save();
-  ctx.strokeStyle = "#b0bec5";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(0, 0, pageDims.width, pageDims.height);
-  ctx.restore();
-};
-  }
-  let pvW = photoPreviewWrapper.clientWidth, pvH = photoPreviewWrapper.clientHeight;
-  let scale = Math.min(pvW / imgW, pvH / imgH) * zoom;
-  let offsetX = (pvW - imgW * scale) / 2 + pan.x;
-  let offsetY = (pvH - imgH * scale) / 2 + pan.y;
-  let sx = Math.max(0, -offsetX / scale);
-  let sy = Math.max(0, -offsetY / scale);
-  let sw = Math.min(imgW - sx, pvW / scale);
-  let sh = Math.min(imgH - sy, pvH / scale);
-  return { sx, sy, sw, sh };
-}
+// ========== Download & Share ==========
 downloadBtn.addEventListener('click', () => {
   let format = formatSelect.value;
   let link = document.createElement('a');
@@ -575,6 +490,9 @@ shareBtn.addEventListener('click', async () => {
     }
   }
 });
+
+// ========== Init ==========
+
 function init() {
   if (unitSelect.value === "px") {
     photoWidthInput.value = 300;
@@ -595,6 +513,8 @@ function init() {
 }
 init();
 
+// ========== Render Output Sheet ==========
+
 function renderCanvas() {
   let dims = getPhotoDimsPx();
   let pageDims = getPageDimsPx();
@@ -609,6 +529,7 @@ function renderCanvas() {
   np = Math.min(np, maxPhotos);
   let cols = Math.min(maxCols, np);
   let rows = Math.ceil(np / cols);
+
   if (autocenterCheck.checked) {
     let usedW = cols * dims.width + (cols - 1) * spacing.h;
     let usedH = rows * dims.height + (rows - 1) * spacing.v;
@@ -619,12 +540,38 @@ function renderCanvas() {
     marginTopInput.value = marginBottomInput.value = (unit === 'px') ? margins.top : (unit === 'mm' ? (margins.top*25.4/dpi).toFixed(2) : (margins.top/dpi).toFixed(2));
     marginLeftInput.value = marginRightInput.value = (unit === 'px') ? margins.left : (unit === 'mm' ? (margins.left*25.4/dpi).toFixed(2) : (margins.left/dpi).toFixed(2));
   }
+
   outputCanvas.width = pageDims.width;
   outputCanvas.height = pageDims.height;
   let ctx = outputCanvas.getContext('2d');
   ctx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, pageDims.width, pageDims.height);
+
+  // Dotted cut lines in the center of spacing (between photos)
+  ctx.save();
+  ctx.strokeStyle = "#e57300";
+  ctx.setLineDash([5, 7]);
+  ctx.lineWidth = 1.1;
+  // Verticals
+  for (let c = 1; c < cols; c++) {
+    let x = margins.left + c * dims.width + (c - 0.5) * spacing.h - spacing.h/2;
+    ctx.beginPath();
+    ctx.moveTo(x, margins.top);
+    ctx.lineTo(x, pageDims.height - margins.bottom);
+    ctx.stroke();
+  }
+  // Horizontals
+  for (let r = 1; r < rows; r++) {
+    let y = margins.top + r * dims.height + (r - 0.5) * spacing.v - spacing.v/2;
+    ctx.beginPath();
+    ctx.moveTo(margins.left, y);
+    ctx.lineTo(pageDims.width - margins.right, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Draw photos with thin black border
   if (imgLoaded) {
     let imgW = imgObj.naturalWidth, imgH = imgObj.naturalHeight;
     let cropParams = getCropParams(imgW, imgH);
@@ -639,28 +586,12 @@ function renderCanvas() {
           cropParams.sx, cropParams.sy, cropParams.sw, cropParams.sh,
           x, y, dims.width, dims.height
         );
-        // Draw thin photo border
+        // Thin black border
         ctx.save();
-        ctx.strokeStyle = "#222d3a";
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#111";
+        ctx.lineWidth = 1.2;
         ctx.setLineDash([]);
-        ctx.strokeRect(x + 0.7, y + 0.7, dims.width - 1.4, dims.height - 1.4);
-        ctx.restore();
-        // Dotted cut lines in the middle (vertical and horizontal)
-        ctx.save();
-        ctx.strokeStyle = "#e57300";
-        ctx.setLineDash([5, 7]);
-        ctx.lineWidth = 1.15;
-        // Vertical center
-        ctx.beginPath();
-        ctx.moveTo(x + dims.width / 2, y + 4);
-        ctx.lineTo(x + dims.width / 2, y + dims.height - 4);
-        ctx.stroke();
-        // Horizontal center
-        ctx.beginPath();
-        ctx.moveTo(x + 4, y + dims.height / 2);
-        ctx.lineTo(x + dims.width - 4, y + dims.height / 2);
-        ctx.stroke();
+        ctx.strokeRect(x + 0.5, y + 0.5, dims.width - 1, dims.height - 1);
         ctx.restore();
         ctx.restore();
       }
