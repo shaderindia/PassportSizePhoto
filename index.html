@@ -5,21 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Nishix Passport Photo Maker</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="header-glass">
-    <div class="header-title">
-      <i class="fa-solid fa-id-card-clip"></i>
-      Nishix Passport Photo Maker
+    <div class="header-content">
+      <div class="header-title">
+        <i class="fa-solid fa-id-card-clip"></i>
+        Nishix Passport Photo Maker
+      </div>
+      <div class="header-sub">All-in-one, easy, accurate! <span class="header-badge">NEW UI 2025</span></div>
     </div>
-    <div class="header-sub">All-in-one, easy, accurate! <span class="header-badge">NEW UI 2025</span></div>
+    <nav class="header-nav">
+      <button id="info-btn" class="nav-btn" title="How to use"><i class="fa fa-circle-info"></i></button>
+      <button id="theme-btn" class="nav-btn" title="Switch Theme"><i class="fa fa-moon"></i></button>
+    </nav>
   </header>
   <main>
-    <section class="card card-glass">
+    <section class="card card-glass shadow-lg">
       <h2><i class="fa fa-cog"></i> Photo & Page Settings</h2>
-      <div class="form-row">
+      <div class="settings-grid">
         <div class="form-group">
           <label for="unit"><i class="fa fa-ruler-combined"></i> Units</label>
           <select id="unit">
@@ -41,11 +47,9 @@
           <input type="number" id="photo-height" min="1" step="0.01">
         </div>
         <div class="form-group">
-          <label for="num-photos"><i class="fa fa-th"></i> Number of Photos</label>
+          <label for="num-photos"><i class="fa fa-th"></i> Number</label>
           <input type="number" id="num-photos" min="1" value="8">
         </div>
-      </div>
-      <div class="form-row">
         <div class="form-group">
           <label for="page-size"><i class="fa fa-file"></i> Page Size</label>
           <select id="page-size">
@@ -63,15 +67,15 @@
         </div>
       </div>
     </section>
-    <section class="card card-glass">
+    <section class="card card-glass shadow-lg">
       <h2><i class="fa fa-border-style"></i> Spacing & Margins</h2>
-      <div class="form-row">
+      <div class="settings-grid">
         <div class="form-group">
-          <label for="h-spacing"><i class="fa fa-arrows-alt-h"></i> Horizontal Spacing</label>
+          <label for="h-spacing"><i class="fa fa-arrows-alt-h"></i> Horizontal Space</label>
           <input type="number" id="h-spacing" min="0" step="0.01" value="10">
         </div>
         <div class="form-group">
-          <label for="v-spacing"><i class="fa fa-arrows-alt-v"></i> Vertical Spacing</label>
+          <label for="v-spacing"><i class="fa fa-arrows-alt-v"></i> Vertical Space</label>
           <input type="number" id="v-spacing" min="0" step="0.01" value="10">
         </div>
         <div class="form-group form-switch">
@@ -82,33 +86,31 @@
           </label>
         </div>
         <div class="form-group form-switch">
-          <label for="show-cutlines"><i class="fa fa-grip-lines-vertical"></i> Show Chain Dot Lines</label>
+          <label for="show-cutlines"><i class="fa fa-grip-lines-vertical"></i> Chain Dot Lines</label>
           <label class="switch">
             <input type="checkbox" id="show-cutlines" checked>
             <span class="slider"></span>
           </label>
         </div>
-      </div>
-      <div class="form-row">
         <div class="form-group">
           <label for="margin-top"><i class="fa fa-arrow-up"></i> Top Margin</label>
           <input type="number" id="margin-top" min="0" step="0.01" value="10">
         </div>
         <div class="form-group">
-          <label for="margin-bottom"><i class="fa fa-arrow-down"></i> Bottom Margin</label>
+          <label for="margin-bottom"><i class="fa fa-arrow-down"></i> Bottom</label>
           <input type="number" id="margin-bottom" min="0" step="0.01" value="10">
         </div>
         <div class="form-group">
-          <label for="margin-left"><i class="fa fa-arrow-left"></i> Left Margin</label>
+          <label for="margin-left"><i class="fa fa-arrow-left"></i> Left</label>
           <input type="number" id="margin-left" min="0" step="0.01" value="10">
         </div>
         <div class="form-group">
-          <label for="margin-right"><i class="fa fa-arrow-right"></i> Right Margin</label>
+          <label for="margin-right"><i class="fa fa-arrow-right"></i> Right</label>
           <input type="number" id="margin-right" min="0" step="0.01" value="10">
         </div>
       </div>
     </section>
-    <section class="card card-glass">
+    <section class="card card-glass shadow-lg">
       <h2><i class="fa fa-image"></i> Upload & Crop Photo</h2>
       <div class="upload-area">
         <input type="file" id="photo-upload" accept="image/*" hidden>
@@ -121,7 +123,7 @@
           <img id="photo-preview" alt="Preview">
           <div id="crop-box" class="hidden"></div>
         </div>
-        <div class="adjust-hint glass">Pan: drag &bull; Zoom: wheel/pinch &bull; Crop: drag/move box.</div>
+        <div class="adjust-hint glass">Pan: drag &bull; Zoom: mouse wheel/pinch &bull; Crop: drag/move box</div>
         <div class="adjust-tools">
           <button id="rotate-left" title="Rotate Left"><i class="fa fa-undo"></i></button>
           <button id="rotate-right" title="Rotate Right"><i class="fa fa-redo"></i></button>
@@ -129,7 +131,7 @@
         </div>
       </div>
     </section>
-    <section class="card card-glass" id="output-section">
+    <section class="card card-glass shadow-lg" id="output-section">
       <h2><i class="fa fa-print"></i> Sheet Preview & Download</h2>
       <div class="canvas-area">
         <canvas id="output-canvas"></canvas>
@@ -145,6 +147,20 @@
         <button id="download-hq-btn"><i class="fa fa-download"></i> High Quality</button>
       </div>
     </section>
+    <div id="info-modal" class="modal-glass">
+      <div class="modal-content">
+        <button id="close-info" class="close-btn"><i class="fa fa-times"></i></button>
+        <h3><i class="fa fa-info-circle"></i> How to use</h3>
+        <ul>
+          <li>Set your desired <b>photo size</b> and <b>number of photos</b>.</li>
+          <li>Pick your <b>page size</b> (A4, 4R, or custom).</li>
+          <li>Adjust <b>spacing</b> and <b>margins</b> for your layout.</li>
+          <li>Upload a photo, crop/zoom/pan as needed, and preview your sheet.</li>
+          <li>Download your printable sheet in JPG/PNG, or share the web app!</li>
+        </ul>
+        <div class="tip"><i class="fa fa-lightbulb"></i> <b>Tip:</b> Pinch with two fingers to zoom the photo on mobile!</div>
+      </div>
+    </div>
   </main>
   <footer>
     <div class="branding">
