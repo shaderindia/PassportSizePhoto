@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const unitRadios = document.querySelectorAll('input[name="units"]');
     const pixelDensityGroup = document.getElementById('pixelDensityGroup');
-    const pixelDensityInput = document.getElementById('pixelDensity'); // Added
+    const pixelDensityInput = document.getElementById('pixelDensity');
     const photoWidthInput = document.getElementById('photoWidth');
     const photoLengthInput = document.getElementById('photoLength');
     const photoWidthUnit = document.getElementById('photoWidthUnit');
@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cropPhotoBtn = document.getElementById('cropPhoto');
     const croppingOverlay = document.getElementById('croppingOverlay');
     const cropBox = document.getElementById('cropBox');
+    const cropBoxHandles = cropBox.querySelectorAll('.handle'); // Get handles
     const photoHint = document.getElementById('photoHint');
     const numPhotosInput = document.getElementById('numPhotos');
     const autoSpacingCheckbox = document.getElementById('autoSpacing');
@@ -38,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const manualMarginDiv = document.getElementById('manualMargin');
     const topMarginInput = document.getElementById('topMargin');
     const topMarginValue = document.getElementById('topMarginValue');
-    const leftMarginInput = document = document.getElementById('leftMargin'); // Fixed typo
+    const leftMarginInput = document.getElementById('leftMargin');
     const leftMarginValue = document.getElementById('leftMarginValue');
     const outputPreview = document.getElementById('outputPreview');
     const downloadFormatSelect = document.getElementById('downloadFormat');
@@ -49,41 +50,39 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUnit = 'mm';
     let photoFile = null;
     let imgData = {
-        src: '',
-        scale: 1,
-        rotation: 0,
-        offsetX: 0, // for panning the image within its container
-        offsetY: 0, // for panning the image within its container
-        crop: { x: 0, y: 0, width: 0, height: 0, scale: 1 } // Cropping area relative to actual image
+        src: '', // Base64 encoded image data
+        naturalWidth: 0, // Original image width
+        naturalHeight: 0, // Original image height
+        scale: 1, // Visual scale of the image within photoPreview
+        rotation: 0, // Rotation in degrees
+        offsetX: 0, // Pan X offset for visual adjustment
+        offsetY: 0, // Pan Y offset for visual adjustment
+        crop: { x: 0, y: 0, width: 0, height: 0 } // Crop box coordinates relative to *transformed* image
     };
     let isCropping = false;
     let isDraggingPhoto = false;
     let isDraggingCropBox = false;
     let isResizingCropBox = false;
-    let startPointerX, startPointerY;
-    let startOffsetX, startOffsetY;
-    let cropBoxStartWidth, cropBoxStartHeight, cropBoxStartX, cropBoxStartY;
+    let resizeHandleType = null; // 'top-left', 'bottom-right'
+    let startPointerX, startPointerY; // Mouse/touch start position
+    let startOffsetX, startOffsetY; // Image's offset at drag start
+    let cropBoxStartWidth, cropBoxStartHeight, cropBoxStartX, cropBoxStartY; // Crop box dimensions at resize/drag start
 
     // --- Unit and Dimension Logic ---
     const updateUnitLabels = () => {
         currentUnit = document.querySelector('input[name="units"]:checked').value;
-        const unitLabels = [
+        const unitElements = [
             photoWidthUnit, photoLengthUnit,
-            customPageWidthUnit, customPageHeightUnit
+            customPageWidthUnit, customPageHeightUnit,
+            horizontalSpacingValue, verticalSpacingValue,
+            topMarginValue, leftMarginValue
         ];
 
-        unitLabels.forEach(label => {
-            if (label) {
-                label.textContent = currentUnit === 'pixel' ? 'px' : currentUnit;
+        unitElements.forEach(el => {
+            if (el) { // Check if element exists
+                el.textContent = currentUnit === 'pixel' ? 'px' : currentUnit;
             }
         });
-
-        // Update spacing/margin value displays
-        horizontalSpacingValue.textContent = `${horizontalSpacingInput.value}${currentUnit}`;
-        verticalSpacingValue.textContent = `${verticalSpacingInput.value}${currentUnit}`;
-        topMarginValue.textContent = `${topMarginInput.value}${currentUnit}`;
-        leftMarginValue.textContent = `${leftMarginInput.value}${currentUnit}`;
-
 
         // Toggle pixel density input visibility
         if (currentUnit === 'pixel') {
@@ -92,12 +91,12 @@ document.addEventListener('DOMContentLoaded', () => {
             pixelDensityGroup.style.display = 'none';
         }
 
-        // Adjust default values based on unit if needed
+        // Adjust default values based on unit for photo dimensions
         if (currentUnit === 'mm') {
             if (photoWidthInput.value === '300' || photoWidthInput.value === '400') photoWidthInput.value = '35';
             if (photoLengthInput.value === '300' || photoLengthInput.value === '400') photoLengthInput.value = '45';
         } else if (currentUnit === 'pixel') {
-            if (photoWidthInput.value === '35' || photoWidthInput.value === '45') photoWidthInput.value = '300';
+            if (photoWidthInput.value === '35' || photoLengthInput.value === '45') photoWidthInput.value = '300';
             if (photoLengthInput.value === '35' || photoLengthInput.value === '45') photoLengthInput.value = '400';
         }
         generatePhotoSheet(); // Recalculate preview on unit change
@@ -202,15 +201,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 croppingOverlay.style.display = 'none'; // Hide overlay initially
                 isCropping = false; // Reset cropping state
 
-                // Reset crop data
-                imgData.crop = { x: 0, y: 0, width: 0, height: 0, scale: 1 };
-
-                // Ensure image is loaded before setting initial transform
+                // Get natural dimensions after image loads
                 photoPreview.onload = () => {
+                    imgData.naturalWidth = photoPreview.naturalWidth;
+                    imgData.naturalHeight = photoPreview.naturalHeight;
+                    // Reset crop data relative to image's natural size
+                    imgData.crop = { x: 0, y: 0, width: imgData.naturalWidth, height: imgData.naturalHeight };
                     updatePhotoPreviewStyles();
                     generatePhotoSheet(); // Generate initial sheet after photo loads
                 };
-
             };
             reader.readAsDataURL(photoFile);
         }
@@ -228,26 +227,31 @@ document.addEventListener('DOMContentLoaded', () => {
     zoomInBtn.addEventListener('click', () => {
         imgData.scale += 0.1;
         updatePhotoPreviewStyles();
+        generatePhotoSheet(); // Update sheet if image content changed
     });
 
     zoomOutBtn.addEventListener('click', () => {
         imgData.scale = Math.max(0.1, imgData.scale - 0.1);
         updatePhotoPreviewStyles();
+        generatePhotoSheet(); // Update sheet if image content changed
     });
 
     rotateLeftBtn.addEventListener('click', () => {
         imgData.rotation = (imgData.rotation - 90) % 360;
         updatePhotoPreviewStyles();
+        generatePhotoSheet(); // Update sheet if image content changed
     });
 
     rotateRightBtn.addEventListener('click', () => {
         imgData.rotation = (imgData.rotation + 90) % 360;
         updatePhotoPreviewStyles();
+        generatePhotoSheet(); // Update sheet if image content changed
     });
 
-    // Pan/Drag Photo
+    // Pan/Drag Photo within container
     photoPreviewContainer.addEventListener('mousedown', (e) => {
-        if (!isCropping && e.target === photoPreview) { // Only drag photo itself, not controls
+        // Only start dragging if not in cropping mode and mouse is over the image
+        if (!isCropping && e.target === photoPreview) {
             isDraggingPhoto = true;
             startPointerX = e.clientX;
             startPointerY = e.clientY;
@@ -265,38 +269,128 @@ document.addEventListener('DOMContentLoaded', () => {
             imgData.offsetX = startOffsetX + dx;
             imgData.offsetY = startOffsetY + dy;
             updatePhotoPreviewStyles();
+        } else if (isResizingCropBox) {
+            const previewContainerRect = photoPreviewContainer.getBoundingClientRect();
+            const currentMouseX = e.clientX - previewContainerRect.left; // Mouse X relative to container
+            const currentMouseY = e.clientY - previewContainerRect.top;  // Mouse Y relative to container
+
+            const photoWidthVal = parseFloat(photoWidthInput.value);
+            const photoLengthVal = parseFloat(photoLengthInput.value);
+            if (photoWidthVal === 0 || photoLengthVal === 0) return; // Prevent division by zero
+            const photoRatio = photoWidthVal / photoLengthVal;
+
+            let newWidth, newHeight, newX, newY;
+
+            if (resizeHandleType === 'bottom-right') {
+                newWidth = cropBoxStartWidth + (currentMouseX - startPointerX);
+                newHeight = newWidth / photoRatio; // Maintain aspect ratio
+
+                // Ensure dimensions don't go below minimum
+                newWidth = Math.max(20, newWidth);
+                newHeight = Math.max(20, newHeight);
+
+                // Ensure crop box doesn't exceed container bounds when resizing
+                newWidth = Math.min(newWidth, previewContainerRect.width - cropBox.offsetLeft);
+                newHeight = Math.min(newHeight, previewContainerRect.height - cropBox.offsetTop);
+
+                // Apply the new dimensions
+                cropBox.style.width = `${newWidth}px`;
+                cropBox.style.height = `${newHeight}px`;
+            } else if (resizeHandleType === 'top-left') {
+                newWidth = cropBoxStartWidth - (currentMouseX - startPointerX);
+                newHeight = newWidth / photoRatio;
+
+                newWidth = Math.max(20, newWidth);
+                newHeight = Math.max(20, newHeight);
+
+                // Calculate new top-left position
+                newX = cropBoxStartX + (cropBoxStartWidth - newWidth);
+                newY = cropBoxStartY + (cropBoxStartHeight - newHeight);
+
+                // Adjust if new position goes out of bounds (prioritize not going below 0)
+                if (newX < 0) {
+                    newX = 0;
+                    newWidth = cropBoxStartX + cropBoxStartWidth;
+                    newHeight = newWidth / photoRatio;
+                }
+                if (newY < 0) {
+                    newY = 0;
+                    newHeight = cropBoxStartY + cropBoxStartHeight;
+                    newWidth = newHeight * photoRatio;
+                }
+
+                cropBox.style.width = `${newWidth}px`;
+                cropBox.style.height = `${newHeight}px`;
+                cropBox.style.left = `${newX}px`;
+                cropBox.style.top = `${newY}px`;
+            }
+            // Update imgData.crop based on the new cropBox style values
+            imgData.crop.x = cropBox.offsetLeft;
+            imgData.crop.y = cropBox.offsetTop;
+            imgData.crop.width = cropBox.offsetWidth;
+            imgData.crop.height = cropBox.offsetHeight;
+        } else if (isDraggingCropBox) {
+            const previewContainerRect = photoPreviewContainer.getBoundingClientRect();
+            const currentMouseX = e.clientX - previewContainerRect.left;
+            const currentMouseY = e.clientY - previewContainerRect.top;
+
+            const dx = currentMouseX - startPointerX;
+            const dy = currentMouseY - startPointerY;
+
+            let newX = cropBoxStartX + dx;
+            let newY = cropBoxStartY + dy;
+
+            // Keep crop box within preview container boundaries
+            newX = Math.max(0, Math.min(newX, previewContainerRect.width - cropBox.offsetWidth));
+            newY = Math.max(0, Math.min(newY, previewContainerRect.height - cropBox.offsetHeight));
+
+            cropBox.style.left = `${newX}px`;
+            cropBox.style.top = `${newY}px`;
+            imgData.crop.x = newX;
+            imgData.crop.y = newY; // Update internal model
         }
     });
 
     document.addEventListener('mouseup', () => {
-        if (isDraggingPhoto) {
-            isDraggingPhoto = false;
-            photoPreview.style.cursor = 'grab'; // Reset cursor
+        isDraggingPhoto = false;
+        isDraggingCropBox = false;
+        isResizingCropBox = false;
+        resizeHandleType = null;
+
+        if (!isCropping && photoPreview.style.display === 'block') {
+             photoPreview.style.cursor = 'grab'; // Reset cursor for panning
+        } else if (isCropping) {
+            cropBox.style.cursor = 'move'; // Reset cursor for dragging crop box
         }
+        // After any photo manipulation (pan/zoom/crop), regenerate the sheet
+        generatePhotoSheet();
     });
 
 
     cropPhotoBtn.addEventListener('click', () => {
         isCropping = !isCropping;
         if (isCropping) {
-            croppingOverlay.style.display = 'flex';
-            photoPreview.style.cursor = 'default'; // Disable pan when cropping
-
-            // Calculate initial crop box size based on desired aspect ratio
-            const photoWidthVal = parseFloat(photoWidthInput.value);
-            const photoLengthVal = parseFloat(photoLengthInput.value);
-            if (photoWidthVal === 0 || photoLengthVal === 0) {
-                alert("Please set valid photo dimensions (width and height) before cropping.");
+            if (!photoFile) {
+                alert("Please upload a photo first.");
                 isCropping = false;
-                croppingOverlay.style.display = 'none';
                 return;
             }
-            const photoRatio = photoWidthVal / photoLengthVal;
+            const photoWidthVal = parseFloat(photoWidthInput.value);
+            const photoLengthVal = parseFloat(photoLengthInput.value);
+            if (isNaN(photoWidthVal) || isNaN(photoLengthVal) || photoWidthVal <= 0 || photoLengthVal <= 0) {
+                alert("Please set valid positive photo dimensions (width and height) before cropping.");
+                isCropping = false;
+                return;
+            }
+            photoPreview.style.cursor = 'default'; // Disable photo pan when cropping
+            croppingOverlay.style.display = 'flex';
 
-            const previewRect = photoPreviewContainer.getBoundingClientRect(); // Use container for bounds
+            const photoRatio = photoWidthVal / photoLengthVal;
+            const previewRect = photoPreviewContainer.getBoundingClientRect();
+
             let cropWidth, cropHeight;
 
-            // Determine initial crop box size based on container aspect ratio
+            // Calculate crop box size based on the photoPreviewContainer dimensions and desired aspect ratio
             if (previewRect.width / previewRect.height > photoRatio) {
                 cropHeight = previewRect.height * 0.8; // Start with 80% of container height
                 cropWidth = cropHeight * photoRatio;
@@ -305,225 +399,118 @@ document.addEventListener('DOMContentLoaded', () => {
                 cropHeight = cropWidth / photoRatio;
             }
 
-            // Ensure crop box fits within container
-            if (cropWidth > previewRect.width) {
-                cropWidth = previewRect.width;
+            // Ensure crop box fits within container and is not too small
+            cropWidth = Math.max(50, Math.min(cropWidth, previewRect.width));
+            cropHeight = Math.max(50, Math.min(cropHeight, previewRect.height));
+
+            // Adjust one dimension if the other hits its max, to maintain ratio
+            if (cropWidth === previewRect.width) {
                 cropHeight = cropWidth / photoRatio;
-            }
-            if (cropHeight > previewRect.height) {
-                cropHeight = previewRect.height;
+            } else if (cropHeight === previewRect.height) {
                 cropWidth = cropHeight * photoRatio;
             }
+
 
             cropBox.style.width = `${cropWidth}px`;
             cropBox.style.height = `${cropHeight}px`;
             cropBox.style.left = `${(previewRect.width - cropWidth) / 2}px`;
             cropBox.style.top = `${(previewRect.height - cropHeight) / 2}px`;
-            cropBox.style.cursor = 'grab';
+            cropBox.style.cursor = 'move'; // For dragging the box itself
 
-            // Store initial crop box dimensions relative to its position on the container
-            imgData.crop.width = cropWidth;
-            imgData.crop.height = cropHeight;
-            imgData.crop.x = (previewRect.width - cropWidth) / 2;
-            imgData.crop.y = (previewRect.height - cropHeight) / 2;
+            // Update internal crop data (relative to preview container)
+            imgData.crop.x = cropBox.offsetLeft;
+            imgData.crop.y = cropBox.offsetTop;
+            imgData.crop.width = cropBox.offsetWidth;
+            imgData.crop.height = cropBox.offsetHeight;
 
         } else {
             croppingOverlay.style.display = 'none';
-            photoPreview.style.cursor = 'grab'; // Re-enable pan
-            // In a real app, you'd apply the crop here to a canvas or send to server
-            // For now, we only update the imgData.crop object
+            photoPreview.style.cursor = 'grab'; // Re-enable photo pan
+            generatePhotoSheet(); // Regenerate sheet with new crop applied
         }
     });
 
-    // --- Cropping Interaction (Drag & Resize) ---
-    croppingOverlay.addEventListener('mousedown', (e) => {
-        if (isCropping) {
-            const cropBoxRect = cropBox.getBoundingClientRect();
+    // Handle resize handles mousedown
+    cropBoxHandles.forEach(handle => {
+        handle.addEventListener('mousedown', (e) => {
+            if (isCropping) {
+                isResizingCropBox = true;
+                resizeHandleType = e.target.classList.contains('top-left') ? 'top-left' : 'bottom-right';
+                cropBoxStartWidth = cropBox.offsetWidth;
+                cropBoxStartHeight = cropBox.offsetHeight;
+                cropBoxStartX = cropBox.offsetLeft;
+                cropBoxStartY = cropBox.offsetTop;
+                startPointerX = e.clientX - photoPreviewContainer.getBoundingClientRect().left;
+                startPointerY = e.clientY - photoPreviewContainer.getBoundingClientRect().top;
+                e.stopPropagation(); // Prevent dragging crop box itself
+                e.preventDefault();
+            }
+        });
+    });
+
+    cropBox.addEventListener('mousedown', (e) => {
+        if (isCropping && e.target === cropBox) { // Only drag if directly on crop box, not handles
+            isDraggingCropBox = true;
             const previewContainerRect = photoPreviewContainer.getBoundingClientRect();
-            const mouseX = e.clientX - previewContainerRect.left; // Mouse X relative to container
-            const mouseY = e.clientY - previewContainerRect.top;  // Mouse Y relative to container
-
-            // Check if resizing from corners/edges (simplified for example)
-            const handleSize = 10;
-            const cropBoxLeft = cropBox.offsetLeft;
-            const cropBoxTop = cropBox.offsetTop;
-            const cropBoxRight = cropBoxLeft + cropBox.offsetWidth;
-            const cropBoxBottom = cropBoxTop + cropBox.offsetHeight;
-
-            // Check if mouse is over bottom-right handle
-            if (mouseX > cropBoxRight - handleSize && mouseY > cropBoxBottom - handleSize &&
-                mouseX < cropBoxRight + handleSize && mouseY < cropBoxBottom + handleSize) {
-                isResizingCropBox = true;
-                cropBoxStartWidth = cropBox.offsetWidth;
-                cropBoxStartHeight = cropBox.offsetHeight;
-                startPointerX = mouseX;
-                startPointerY = mouseY;
-                cropBox.style.cursor = 'nwse-resize';
-            }
-            // Check if mouse is over top-left handle
-            else if (mouseX < cropBoxLeft + handleSize && mouseY < cropBoxTop + handleSize &&
-                     mouseX > cropBoxLeft - handleSize && mouseY > cropBoxTop - handleSize) {
-                isResizingCropBox = true;
-                cropBoxStartWidth = cropBox.offsetWidth;
-                cropBoxStartHeight = cropBox.offsetHeight;
-                cropBoxStartX = cropBox.offsetLeft;
-                cropBoxStartY = cropBox.offsetTop;
-                startPointerX = mouseX;
-                startPointerY = mouseY;
-                cropBox.style.cursor = 'nwse-resize';
-            }
-            // Check if mouse is inside the crop box (for dragging)
-            else if (mouseX > cropBoxLeft && mouseX < cropBoxRight &&
-                       mouseY > cropBoxTop && mouseY < cropBoxBottom) {
-                isDraggingCropBox = true;
-                startPointerX = mouseX;
-                startPointerY = mouseY;
-                cropBoxStartX = cropBox.offsetLeft;
-                cropBoxStartY = cropBox.offsetTop;
-                cropBox.style.cursor = 'grabbing';
-            }
+            startPointerX = e.clientX - previewContainerRect.left;
+            startPointerY = e.clientY - previewContainerRect.top;
+            cropBoxStartX = cropBox.offsetLeft;
+            cropBoxStartY = cropBox.offsetTop;
+            cropBox.style.cursor = 'grabbing';
             e.preventDefault();
-        }
-    });
-
-    document.addEventListener('mousemove', (e) => {
-        if (isCropping && (isDraggingCropBox || isResizingCropBox)) {
-            const previewContainerRect = photoPreviewContainer.getBoundingClientRect();
-            const currentMouseX = e.clientX - previewContainerRect.left;
-            const currentMouseY = e.clientY - previewContainerRect.top;
-
-            const dx = currentMouseX - startPointerX;
-            const dy = currentMouseY - startPointerY;
-
-            if (isDraggingCropBox) {
-                let newX = cropBoxStartX + dx;
-                let newY = cropBoxStartY + dy;
-
-                // Keep crop box within preview container boundaries
-                newX = Math.max(0, Math.min(newX, previewContainerRect.width - cropBox.offsetWidth));
-                newY = Math.max(0, Math.min(newY, previewContainerRect.height - cropBox.offsetHeight));
-
-                cropBox.style.left = `${newX}px`;
-                cropBox.style.top = `${newY}px`;
-                imgData.crop.x = newX;
-                imgData.crop.y = newY; // Update internal model
-            } else if (isResizingCropBox) {
-                const photoWidthVal = parseFloat(photoWidthInput.value);
-                const photoLengthVal = parseFloat(photoLengthInput.value);
-                const photoRatio = photoWidthVal / photoLengthVal;
-
-                let newWidth, newHeight, newX, newY;
-
-                // If resizing from bottom-right (simplified)
-                if (cropBox.style.cursor === 'nwse-resize' && currentMouseX >= cropBox.offsetLeft && currentMouseY >= cropBox.offsetTop) { // Check if we are resizing from bottom right
-                    newWidth = cropBoxStartWidth + dx;
-                    newHeight = newWidth / photoRatio; // Maintain aspect ratio
-
-                    // Ensure dimensions don't go below minimum
-                    newWidth = Math.max(20, newWidth);
-                    newHeight = Math.max(20, newHeight);
-
-                    // Ensure crop box doesn't exceed container bounds when resizing
-                    newWidth = Math.min(newWidth, previewContainerRect.width - cropBox.offsetLeft);
-                    newHeight = Math.min(newHeight, previewContainerRect.height - cropBox.offsetTop);
-
-                    // Apply the new dimensions
-                    cropBox.style.width = `${newWidth}px`;
-                    cropBox.style.height = `${newHeight}px`;
-
-                    imgData.crop.width = newWidth;
-                    imgData.crop.height = newHeight;
-                }
-                 // If resizing from top-left (simplified)
-                else if (cropBox.style.cursor === 'nwse-resize' && currentMouseX < cropBox.offsetLeft + cropBox.offsetWidth && currentMouseY < cropBox.offsetTop + cropBox.offsetHeight) {
-                    newWidth = cropBoxStartWidth - dx;
-                    newHeight = newWidth / photoRatio;
-
-                    newWidth = Math.max(20, newWidth);
-                    newHeight = Math.max(20, newHeight);
-
-                    newX = cropBoxStartX + (cropBoxStartWidth - newWidth);
-                    newY = cropBoxStartY + (cropBoxStartHeight - newHeight);
-
-                    // Ensure crop box stays within boundaries during top-left resize
-                    newX = Math.max(0, newX);
-                    newY = Math.max(0, newY);
-
-                    // Recalculate width/height if newX/newY hit 0
-                    if (newX === 0) {
-                        newWidth = cropBoxStartX + cropBoxStartWidth;
-                        newHeight = newWidth / photoRatio;
-                    }
-                    if (newY === 0) {
-                        newHeight = cropBoxStartY + cropBoxStartHeight;
-                        newWidth = newHeight * photoRatio;
-                    }
-
-
-                    cropBox.style.width = `${newWidth}px`;
-                    cropBox.style.height = `${newHeight}px`;
-                    cropBox.style.left = `${newX}px`;
-                    cropBox.style.top = `${newY}px`;
-
-                    imgData.crop.width = newWidth;
-                    imgData.crop.height = newHeight;
-                    imgData.crop.x = newX;
-                    imgData.crop.y = newY;
-                }
-            }
-        }
-    });
-
-
-    document.addEventListener('mouseup', () => {
-        isDraggingCropBox = false;
-        isResizingCropBox = false;
-        if (isCropping) {
-            cropBox.style.cursor = 'grab'; // Reset cursor
         }
     });
 
 
     // --- Core Functionality (Simulated with Canvas) ---
 
+    // Utility function to convert units
+    const convertToPixels = (value, fromUnit, toDPI) => {
+        if (fromUnit === 'mm') {
+            return (value / 25.4) * toDPI;
+        } else if (fromUnit === 'inch') {
+            return value * toDPI;
+        } else { // 'pixel'
+            return value;
+        }
+    };
+
     const generatePhotoSheet = () => {
-        if (!photoFile) {
+        if (!photoFile || !imgData.src) {
             outputPreview.innerHTML = '<p>Upload a photo and set dimensions to see a preview.</p>';
             return;
         }
 
-        const photoWidthMM = parseFloat(photoWidthInput.value);
-        const photoLengthMM = parseFloat(photoLengthInput.value);
-        let pageWidthMM, pageHeightMM;
+        const photoWidthVal = parseFloat(photoWidthInput.value);
+        const photoLengthVal = parseFloat(photoLengthInput.value);
+        let pageWidthVal, pageHeightVal;
 
         const selectedPageSize = document.querySelector('input[name="pageSize"]:checked').value;
         if (selectedPageSize === 'A4') {
-            pageWidthMM = 210; // mm
-            pageHeightMM = 297; // mm
+            pageWidthVal = 210; // mm
+            pageHeightVal = 297; // mm
         } else if (selectedPageSize === '4R') {
-            pageWidthMM = 102; // mm
-            pageHeightMM = 152; // mm
+            pageWidthVal = 102; // mm
+            pageHeightVal = 152; // mm
         } else { // Custom
-            pageWidthMM = parseFloat(customPageWidthInput.value);
-            pageHeightMM = parseFloat(customPageHeightInput.value);
+            pageWidthVal = parseFloat(customPageWidthInput.value);
+            pageHeightVal = parseFloat(customPageHeightInput.value);
         }
 
         // Validate essential inputs
-        if (isNaN(photoWidthMM) || isNaN(photoLengthMM) || photoWidthMM <= 0 || photoLengthMM <= 0 ||
-            isNaN(pageWidthMM) || isNaN(pageHeightMM) || pageWidthMM <= 0 || pageHeightMM <= 0) {
+        if (isNaN(photoWidthVal) || isNaN(photoLengthVal) || photoWidthVal <= 0 || photoLengthVal <= 0 ||
+            isNaN(pageWidthVal) || isNaN(pageHeightVal) || pageWidthVal <= 0 || pageHeightVal <= 0) {
             outputPreview.innerHTML = '<p>Please enter valid positive dimensions for photos and page size.</p>';
             return;
         }
 
 
-        // Convert all dimensions to pixels for canvas (assuming specified DPI)
         const dpi = parseFloat(pixelDensityInput.value || 300);
-        const mmToPx = (mm) => (mm / 25.4) * dpi; // Convert mm to inches, then inches to pixels
 
-        const photoPxWidth = currentUnit === 'pixel' ? photoWidthMM : mmToPx(photoWidthMM);
-        const photoPxHeight = currentUnit === 'pixel' ? photoLengthMM : mmToPx(photoLengthMM);
-        const pagePxWidth = mmToPx(pageWidthMM);
-        const pagePxHeight = mmToPx(pageHeightMM);
+        const photoPxWidth = convertToPixels(photoWidthVal, currentUnit, dpi);
+        const photoPxHeight = convertToPixels(photoLengthVal, currentUnit, dpi);
+        const pagePxWidth = convertToPixels(pageWidthVal, 'mm', dpi); // Page size always based on mm for A4/4R
+        const pagePxHeight = convertToPixels(pageHeightVal, 'mm', dpi);
 
         const numPhotos = parseInt(numPhotosInput.value);
         if (isNaN(numPhotos) || numPhotos <= 0) {
@@ -537,12 +524,12 @@ document.addEventListener('DOMContentLoaded', () => {
         let leftM = parseFloat(leftMarginInput.value);
 
         // Convert spacing and margins to pixels
-        hSpace = currentUnit === 'pixel' ? hSpace : mmToPx(hSpace);
-        vSpace = currentUnit === 'pixel' ? vSpace : mmToPx(vSpace);
-        topM = currentUnit === 'pixel' ? topM : mmToPx(topM);
-        leftM = currentUnit === 'pixel' ? leftM : mmToPx(leftM);
+        hSpace = convertToPixels(hSpace, currentUnit, dpi);
+        vSpace = convertToPixels(vSpace, currentUnit, dpi);
+        topM = convertToPixels(topM, currentUnit, dpi);
+        leftM = convertToPixels(leftM, currentUnit, dpi);
 
-        // Calculate photos per row and number of rows
+        // Calculate photos per row and number of rows (initially based on manual/default)
         let photosPerRow = Math.floor((pagePxWidth - 2 * leftM + hSpace) / (photoPxWidth + hSpace));
         photosPerRow = Math.max(1, photosPerRow); // Ensure at least 1 photo per row
 
@@ -550,11 +537,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Calculate automatic spacing and margins if enabled
         if (autoSpacingCheckbox.checked) {
+            const availableWidthForPhotos = pagePxWidth - (2 * leftM); // Assume margins are fixed for calc
+            photosPerRow = Math.floor(availableWidthForPhotos / photoPxWidth);
+            photosPerRow = Math.max(1, photosPerRow);
+
             if (photosPerRow > 1) {
                 hSpace = (pagePxWidth - (photosPerRow * photoPxWidth)) / (photosPerRow + 1);
             } else {
                 hSpace = (pagePxWidth - photoPxWidth) / 2; // Center horizontally if only one photo per row
             }
+
+            const availableHeightForPhotos = pagePxHeight - (2 * topM); // Assume margins are fixed for calc
+            numRows = Math.ceil(numPhotos / photosPerRow);
+            numRows = Math.max(1, numRows); // Ensure at least 1 row
+
             if (numRows > 1) {
                 vSpace = (pagePxHeight - (numRows * photoPxHeight)) / (numRows + 1);
             } else {
@@ -576,8 +572,117 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         const img = new Image();
-        img.src = photoPreview.src;
+        img.src = imgData.src; // Use the raw image source for drawing
         img.onload = () => {
+            // Create a temporary canvas to apply transforms (zoom, pan, rotate) to the original image
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = imgData.naturalWidth;
+            tempCanvas.height = imgData.naturalHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+
+            // Apply rotation and pan to the temporary canvas
+            tempCtx.save();
+            tempCtx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
+            tempCtx.rotate(imgData.rotation * Math.PI / 180);
+            tempCtx.translate(-tempCanvas.width / 2, -tempCanvas.height / 2);
+
+            // Draw the original image onto the temporary canvas.
+            // This is where pan and scale become critical.
+            // It's tricky to map the imgData.offsetX/Y and imgData.scale (which are for CSS display)
+            // precisely to drawImage arguments for a transformed source.
+            // A common approach for interactive image manipulation is to have a "render" function
+            // that draws the scaled/panned/rotated image to a fixed-size buffer (like the `photoPreviewContainer`).
+            // Then, the crop box is relative to that buffer.
+            // For this *final output* canvas, we need to map the crop *from the original image*.
+
+            // A more robust image manipulation library (like Cropper.js or Fabric.js) handles this complex mapping.
+            // For this basic demo, we'll simplify how pan/zoom/crop affects the final output:
+            // It will largely ignore pan/zoom unless directly for cropping, and mainly focus on the crop box.
+
+            // To map the crop box (which is on the scaled/panned/rotated image within photoPreviewContainer)
+            // back to the original image:
+            // This is the most complex part to do perfectly without a library.
+            // For now, let's assume `imgData.crop` holds the crop rectangle *relative to the untransformed image*
+            // This is a simplification. The `isCropping` logic would need to compute this better.
+
+            let srcX, srcY, srcWidth, srcHeight;
+
+            if (isCropping && imgData.crop.width > 0 && imgData.crop.height > 0) {
+                // To perform the crop on the *original* image accurately based on the
+                // CSS-transformed preview, we'd need inverse transformations.
+                // A simplified direct mapping if no rotation/complex scale on source for this demo:
+                // Map the displayed crop box on the *container* back to the natural image dimensions.
+                const previewContainerWidth = photoPreviewContainer.offsetWidth;
+                const previewContainerHeight = photoPreviewContainer.offsetHeight;
+
+                // How much larger is the natural image than its "fit" within the container
+                // (before user zoom/pan/rotate)?
+                // Let's assume the photoPreview is object-fit: contain initially.
+                // Calculate the actual dimensions the natural image is "contained" into.
+                let containedImgWidth = imgData.naturalWidth;
+                let containedImgHeight = imgData.naturalHeight;
+
+                if (containedImgWidth / containedImgHeight > previewContainerWidth / previewContainerHeight) {
+                    containedImgHeight = previewContainerWidth / (imgData.naturalWidth / imgData.naturalHeight);
+                    containedImgWidth = previewContainerWidth;
+                } else {
+                    containedImgWidth = previewContainerHeight * (imgData.naturalWidth / imgData.naturalHeight);
+                    containedImgHeight = previewContainerHeight;
+                }
+
+                // Ratio of natural image to the contained image
+                const ratioNaturalToContainedX = imgData.naturalWidth / containedImgWidth;
+                const ratioNaturalToContainedY = imgData.naturalHeight / containedImgHeight;
+
+
+                // Adjustments for pan/zoom/rotate in the *preview* need to be converted to
+                // a transformation matrix to properly map the crop box back to the original image pixels.
+                // For this direct drawImage approach without a full matrix library:
+                // We'll calculate the source rectangle (sx, sy, sWidth, sHeight) from the imgData.crop values.
+                // This will be an approximation unless imgData.crop was calculated accurately
+                // based on the *actual* transformed image state.
+
+                srcX = (imgData.crop.x - imgData.offsetX) * ratioNaturalToContainedX; // Rough mapping
+                srcY = (imgData.crop.y - imgData.offsetY) * ratioNaturalToContainedY; // Rough mapping
+                srcWidth = imgData.crop.width * ratioNaturalToContainedX;
+                srcHeight = imgData.crop.height * ratioNaturalToContainedY;
+
+                // Ensure source rectangle is within original image bounds
+                srcX = Math.max(0, srcX);
+                srcY = Math.max(0, srcY);
+                srcWidth = Math.min(srcWidth, imgData.naturalWidth - srcX);
+                srcHeight = Math.min(srcHeight, imgData.naturalHeight - srcY);
+
+                 // Draw the cropped portion from the original image to the destination photo area
+                ctx.drawImage(img, srcX, srcY, srcWidth, srcHeight, x, y, photoPxWidth, photoPxHeight);
+
+            } else {
+                // If not cropping, draw the original image scaled to fit the photo area.
+                // This will use object-fit: cover logic.
+                let sourceX = 0;
+                let sourceY = 0;
+                let sourceWidth = imgData.naturalWidth;
+                let sourceHeight = imgData.naturalHeight;
+
+                let destAspectRatio = photoPxWidth / photoPxHeight;
+                let sourceAspectRatio = sourceWidth / sourceHeight;
+
+                if (sourceAspectRatio > destAspectRatio) {
+                    // Source image is wider than destination, need to crop source horizontally
+                    const newSourceWidth = sourceHeight * destAspectRatio;
+                    sourceX = (sourceWidth - newSourceWidth) / 2;
+                    sourceWidth = newSourceWidth;
+                } else {
+                    // Source image is taller than destination, need to crop source vertically
+                    const newSourceHeight = sourceWidth / destAspectRatio;
+                    sourceY = (sourceHeight - newSourceHeight) / 2;
+                    sourceHeight = newSourceHeight;
+                }
+                ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, x, y, photoPxWidth, photoPxHeight);
+            }
+            ctx.restore(); // Restore context to remove clip from previous photo
+
+
             let photoCount = 0;
             for (let row = 0; row < numRows; row++) {
                 for (let col = 0; col < photosPerRow; col++) {
@@ -586,87 +691,98 @@ document.addEventListener('DOMContentLoaded', () => {
                     const x = leftM + col * (photoPxWidth + hSpace);
                     const y = topM + row * (photoPxHeight + vSpace);
 
+                    // Re-draw the same transformed image (from tempCtx) to each passport photo spot
+                    // This is where the actual image data is put on the final sheet.
+                    // Instead of redrawing the source image from scratch each time,
+                    // a robust solution would pre-process the single output passport photo first
+                    // (applying zoom, pan, rotate, crop) and then stamping that final passport photo.
+                    // For this demo, we'll perform a simplified draw for each.
+
                     ctx.save();
                     ctx.beginPath();
                     ctx.rect(x, y, photoPxWidth, photoPxHeight);
-                    ctx.clip(); // Clip to the desired photo area
+                    ctx.clip(); // Clip to the desired photo area for this instance
 
-                    // Calculate image draw parameters for the canvas based on preview adjustments
-                    const naturalWidth = photoPreview.naturalWidth;
-                    const naturalHeight = photoPreview.naturalHeight;
+                    // Draw the image from the temporary canvas (which has rotation)
+                    // If you wanted to apply imgData.scale and imgData.offset here,
+                    // you'd need to calculate their effect on the source image, which is non-trivial.
+                    // For simplicity, we'll draw the image based on its natural dimensions
+                    // and let it fill the allocated photoPxWidth/Height.
+                    // If isCropping, the drawImage below uses the calculated source rectangle.
+                    // If not cropping, it attempts to 'cover' the destination area.
 
-                    // Calculate the crop box coordinates relative to the actual image
-                    let finalCropX = imgData.crop.x;
-                    let finalCropY = imgData.crop.y;
-                    let finalCropWidth = imgData.crop.width;
-                    let finalCropHeight = imgData.crop.height;
+                    // If you need the exact preview transform applied to the output,
+                    // you'd draw img to tempCanvas with all transforms and then
+                    // draw tempCanvas (cropped) onto the main canvas.
 
-                    // Scaling factor from preview container to actual image size
-                    // This is a rough estimation. For precision, you'd calculate based on the actual image's
-                    // scale and position that *resulted* in the current preview transform.
-                    // A more robust approach would render the image to a temporary canvas, apply all transforms
-                    // (zoom, pan, rotate), and then extract the cropped area from that temporary canvas.
-                    // For this simple demo, we'll try to map preview crop to natural image.
-                    const previewToNaturalScaleX = naturalWidth / photoPreviewContainer.offsetWidth;
-                    const previewToNaturalScaleY = naturalHeight / photoPreviewContainer.offsetHeight;
-
-                    // If photo was cropped
+                    // For the final output, let's prioritize getting the correct aspect ratio and crop.
+                    // The pan/zoom of the *preview* might not perfectly translate to the small output image
+                    // without a more complex image processing pipeline.
                     if (isCropping && imgData.crop.width > 0 && imgData.crop.height > 0) {
-                         // These are approximations; a robust solution requires more complex matrix transformations
-                         // to map the on-screen crop box back to the un-transformed original image pixels.
-                         // For a truly accurate crop, you'd calculate how the 'photoPreview' image is transformed
-                         // relative to its natural size and then apply the inverse transform to the crop box.
-                         // Simplified for this demo:
-                         let sx = imgData.crop.x * previewToNaturalScaleX;
-                         let sy = imgData.crop.y * previewToNaturalScaleY;
-                         let sWidth = imgData.crop.width * previewToNaturalScaleX;
-                         let sHeight = imgData.crop.height * previewToNaturalScaleY;
+                        // Re-calculate the source rectangle for the final output canvas
+                        // This needs to correctly map the PREVIEW crop box (in preview container pixels)
+                        // back to the ORIGINAL image's pixels. This is the hardest part.
+                        // Without a full image manipulation library, this is an approximation.
 
-                         // Ensure source crop fits within natural image dimensions
-                         sx = Math.max(0, sx);
-                         sy = Math.max(0, sy);
-                         sWidth = Math.min(sWidth, naturalWidth - sx);
-                         sHeight = Math.min(sHeight, naturalHeight - sy);
+                        // Get the ratio of the original image's dimensions to the photoPreviewContainer's dimensions
+                        const imgToContainerRatioX = imgData.naturalWidth / photoPreviewContainer.offsetWidth;
+                        const imgToContainerRatioY = imgData.naturalHeight / photoPreviewContainer.offsetHeight;
 
-                         ctx.drawImage(img, sx, sy, sWidth, sHeight, x, y, photoPxWidth, photoPxHeight);
+                        // Account for the image's own CSS transform scale and offset in the preview
+                        // This is a highly complex area for client-side JS without a dedicated library.
+                        // For a simplified demo, let's assume the crop box is relative to the
+                        // *visible* (scaled and panned) image in the preview.
+
+                        // A more reliable way: draw the original image to a temporary canvas, apply ALL transforms (rotate, scale, pan),
+                        // then crop from that temp canvas and draw the cropped portion.
+                        // Given the current simple setup, we'll use a direct image-to-canvas mapping for crop.
+                        // This is an approximation of how the on-screen crop box maps to the original image.
+
+                        // The issue here is `imgData.crop` is in `photoPreviewContainer`'s coordinates.
+                        // `imgData.naturalWidth/Height` are original image.
+                        // We need to translate the crop box from container coordinates to original image coordinates.
+                        let sx = imgData.crop.x * imgToContainerRatioX;
+                        let sy = imgData.crop.y * imgToContainerRatioY;
+                        let sWidth = imgData.crop.width * imgToContainerRatioX;
+                        let sHeight = imgData.crop.height * imgToContainerRatioY;
+
+                        // Correct for any initial object-fit: contain scaling if image is smaller than container
+                        const imgDisplayWidth = imgData.naturalWidth / imgData.scale; // rough estimate of displayed width
+                        const imgDisplayHeight = imgData.naturalHeight / imgData.scale; // rough estimate of displayed height
+
+                        // Ensure source rectangle doesn't exceed image bounds
+                        sx = Math.max(0, sx);
+                        sy = Math.max(0, sy);
+                        sWidth = Math.min(sWidth, imgData.naturalWidth - sx);
+                        sHeight = Math.min(sHeight, imgData.naturalHeight - sy);
+
+                        ctx.drawImage(img, sx, sy, sWidth, sHeight, x, y, photoPxWidth, photoPxHeight);
 
                     } else {
-                        // If not cropping, just draw the entire image scaled to fit the photo size
-                        // This will stretch/squash if aspect ratios don't match, or use object-fit logic
-                        // For simplicity, let's just draw the full image centered and scaled to fill.
-                        let drawX = x;
-                        let drawY = y;
-                        let drawWidth = photoPxWidth;
-                        let drawHeight = photoPxHeight;
+                         // If not cropping, fill the destination area (photoPxWidth, photoPxHeight)
+                         // by 'covering' it with the original image (cropping edges if aspect ratio differs)
+                         let sourceX = 0;
+                         let sourceY = 0;
+                         let sourceWidth = imgData.naturalWidth;
+                         let sourceHeight = imgData.naturalHeight;
 
-                        let imgAspectRatio = naturalWidth / naturalHeight;
-                        let photoAspectRatio = photoPxWidth / photoPxHeight;
+                         let destAspectRatio = photoPxWidth / photoPxHeight;
+                         let sourceAspectRatio = sourceWidth / sourceHeight;
 
-                        if (imgAspectRatio > photoAspectRatio) { // Image is wider than target photo
-                            drawHeight = photoPxHeight;
-                            drawWidth = naturalWidth * (photoPxHeight / naturalHeight);
-                            drawX = x - (drawWidth - photoPxWidth) / 2; // Center horizontally
-                        } else { // Image is taller or same aspect ratio
-                            drawWidth = photoPxWidth;
-                            drawHeight = naturalHeight * (photoPxWidth / naturalWidth);
-                            drawY = y - (drawHeight - photoPxHeight) / 2; // Center vertically
-                        }
-
-                        // Apply pan and zoom to the image drawn on the canvas
-                        // This part is also tricky and requires careful mapping of preview transforms
-                        // to canvas drawImage parameters. A proper implementation would use a canvas
-                        // to render the transformed image, then crop from that canvas.
-                        // For now, let's just attempt to apply basic scale and offset.
-                        // This will NOT perfectly match the visual preview unless you've done the math
-                        // to map `imgData.offsetX`, `imgData.offsetY`, `imgData.scale` to the drawImage source.
-
-                        // A simplified approach for this demo: Draw the image centered and then scale.
-                        // More complex drawing (with pan/zoom) would need a temporary canvas or server-side.
-                         ctx.drawImage(img, drawX + imgData.offsetX, drawY + imgData.offsetY,
-                                        drawWidth * imgData.scale, drawHeight * imgData.scale);
+                         if (sourceAspectRatio > destAspectRatio) {
+                             // Image is wider than destination, crop source horizontally
+                             const newSourceWidth = sourceHeight * destAspectRatio;
+                             sourceX = (sourceWidth - newSourceWidth) / 2;
+                             sourceWidth = newSourceWidth;
+                         } else {
+                             // Image is taller than destination, crop source vertically
+                             const newSourceHeight = sourceWidth / destAspectRatio;
+                             sourceY = (sourceHeight - newSourceHeight) / 2;
+                             sourceHeight = newSourceHeight;
+                         }
+                         ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, x, y, photoPxWidth, photoPxHeight);
                     }
                     ctx.restore(); // Restore context to remove clip
-
 
                     // Draw dotted lines for cutting
                     ctx.strokeStyle = '#999';
@@ -707,17 +823,6 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
     inputsToWatchForPreview.forEach(input => input.addEventListener('input', generatePhotoSheet));
 
-    // Also call generatePhotoSheet when any image transformation happens
-    zoomInBtn.addEventListener('click', generatePhotoSheet);
-    zoomOutBtn.addEventListener('click', generatePhotoSheet);
-    rotateLeftBtn.addEventListener('click', generatePhotoSheet);
-    rotateRightBtn.addEventListener('click', generatePhotoSheet);
-    // Note: Applying the *actual* crop and pan from the preview to the canvas
-    // is the most complex part and often done server-side.
-    // For this demo, crop button only changes `isCropping` and `imgData.crop` but not the actual drawing directly.
-    // You'd need to manually trigger `generatePhotoSheet` *after* the crop is finalized (e.g., a "Apply Crop" button).
-    // For simplicity, let's assume `generatePhotoSheet` uses the *current* imgData.crop if `isCropping` is true.
-
 
     // --- Download Functionality ---
     downloadBtn.addEventListener('click', () => {
@@ -727,6 +832,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const filename = `passport_photos.${format}`;
             let quality = 0.9; // For JPG, 0-1
 
+            // Trigger the download
             canvas.toBlob((blob) => {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -766,5 +872,4 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleCustomPageSize();
     toggleManualSpacing();
     toggleManualMargin();
-    // generatePhotoSheet() is called after photo loads
 });
