@@ -1,4 +1,4 @@
-// ==== PART 1/3: DOM references, helpers, settings, event handlers ====
+// === PART 1/3: DOM, helpers, settings, event handlers ===
 document.addEventListener('DOMContentLoaded', function () {
   // ==== Element References ====
   const unitSelect = document.getElementById('unit');
@@ -31,7 +31,10 @@ document.addEventListener('DOMContentLoaded', function () {
   const downloadBtn = document.getElementById('download-btn');
   const downloadHQBtn = document.getElementById('download-hq-btn');
   const shareBtn = document.getElementById('share-btn');
-
+  const infoBtn = document.getElementById('info-btn');
+  const infoModal = document.getElementById('info-modal');
+  const closeInfo = document.getElementById('close-info');
+  const themeBtn = document.getElementById('theme-btn');
   // ==== State ====
   let unit = 'mm';
   let dpi = 300;
@@ -41,6 +44,7 @@ document.addEventListener('DOMContentLoaded', function () {
   let imgURL = null;
   let zoom = 1.0, rotate = 0, pan = { x: 0, y: 0 };
   let cropActive = false, cropRect = null;
+  let isDark = false;
 
   // ==== Unit Conversion ====
   function mmToInch(mm) { return mm / 25.4; }
@@ -72,7 +76,6 @@ document.addEventListener('DOMContentLoaded', function () {
     marginLeftInput.value = +convert(+marginLeftInput.value, oldUnit, newUnit).toFixed(2);
     marginRightInput.value = +convert(+marginRightInput.value, oldUnit, newUnit).toFixed(2);
   }
-
   function getPhotoDimsPx() {
     let w = parseFloat(photoWidthInput.value);
     let h = parseFloat(photoHeightInput.value);
@@ -115,7 +118,6 @@ document.addEventListener('DOMContentLoaded', function () {
       right: conv(parseFloat(marginRightInput.value) || 0)
     };
   }
-
   // ==== UI Event Handlers ====
   unitSelect.addEventListener('change', () => {
     let oldUnit = unit;
@@ -150,6 +152,18 @@ document.addEventListener('DOMContentLoaded', function () {
   customHeightInput.addEventListener('input', renderCanvas);
   if (showCutlinesCheck) showCutlinesCheck.addEventListener('change', renderCanvas);
 
+  // ==== Modal and Theme ====
+  infoBtn.onclick = () => infoModal.classList.add('active');
+  closeInfo.onclick = () => infoModal.classList.remove('active');
+  infoModal.onclick = (e) => { if (e.target === infoModal) infoModal.classList.remove('active'); };
+  themeBtn.onclick = () => {
+    isDark = !isDark;
+    document.body.classList.toggle('dark', isDark);
+    themeBtn.innerHTML = isDark
+      ? '<i class="fa fa-sun"></i>'
+      : '<i class="fa fa-moon"></i>';
+  };
+
   // ==== Photo Upload ====
   photoUploadInput.addEventListener('change', (e) => {
     if (photoUploadInput.files && photoUploadInput.files[0]) {
@@ -179,11 +193,72 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // ==== Preview Pan & Zoom Logic ==== (To be continued in part 2)
-                          // ==== PART 2/3: Preview Pan & Zoom, Crop UI, Crop Handlers ====
+  // ==== Continue with pan/zoom/crop logic in part 2 ====
+                          // === PART 2/3: Pan, zoom, smooth mobile pinch, crop UI logic ===
 
-  // ==== Preview Pan & Zoom ====
+  // --- Touch gesture support for smooth mobile pan and zoom ---
   let isImgPanning = false, lastPan = { x: 0, y: 0 };
+  let lastTouchDist = null, lastTouchMid = null, pinchZooming = false;
+
+  photoPreviewWrapper.addEventListener("touchstart", function(e) {
+    if (!imgLoaded) return;
+    if (e.touches.length === 2) {
+      pinchZooming = true;
+      lastTouchDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      lastTouchMid = {
+        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+      };
+      e.preventDefault();
+    } else if (e.touches.length === 1) {
+      isImgPanning = true;
+      lastPan = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  photoPreviewWrapper.addEventListener("touchmove", function(e) {
+    if (!imgLoaded) return;
+    if (e.touches.length === 2 && pinchZooming) {
+      let dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      let mid = {
+        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+      };
+      let scale = dist / lastTouchDist;
+      let prevZoom = zoom;
+      zoom = Math.max(0.1, Math.min(zoom * scale, 8));
+      pan.x = (pan.x - mid.x) * (zoom / prevZoom) + mid.x + (mid.x - lastTouchMid.x);
+      pan.y = (pan.y - mid.y) * (zoom / prevZoom) + mid.y + (mid.y - lastTouchMid.y);
+      lastTouchDist = dist;
+      lastTouchMid = mid;
+      updatePreviewTransform();
+      renderCanvas();
+      e.preventDefault();
+    } else if (e.touches.length === 1 && isImgPanning) {
+      let dx = e.touches[0].clientX - lastPan.x;
+      let dy = e.touches[0].clientY - lastPan.y;
+      pan.x += dx;
+      pan.y += dy;
+      lastPan = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      updatePreviewTransform();
+      renderCanvas();
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  photoPreviewWrapper.addEventListener("touchend", function(e) {
+    if (e.touches.length < 2) pinchZooming = false;
+    if (e.touches.length === 0) isImgPanning = false;
+  }, { passive: false });
+
+  // Desktop pan + zoom (mouse)
   photoPreviewWrapper.addEventListener('pointerdown', (e) => {
     if (!imgLoaded) return;
     if (
@@ -438,8 +513,8 @@ document.addEventListener('DOMContentLoaded', function () {
     return { sx, sy, sw, sh };
   }
 
-// ==== PART 2 ends here. Please say "continue JS" for the final part (part 3).
-                          // ==== PART 3/3: Download/Share, Sheet Rendering, Initialization, End ====
+// ==== Continue in part 3 ====
+                          // === PART 3/3: Download/share, rendering, and init ===
 
   // ==== Download/Share ====
   downloadBtn.addEventListener('click', () => {
@@ -544,7 +619,7 @@ document.addEventListener('DOMContentLoaded', function () {
     outputCanvas.height = pageDims.height;
     let ctx = outputCanvas.getContext('2d');
     ctx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle = isDark ? '#23293b' : '#fff';
     ctx.fillRect(0, 0, pageDims.width, pageDims.height);
 
     // Chain dot line ON/OFF
