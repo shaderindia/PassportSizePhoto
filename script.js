@@ -689,3 +689,168 @@ function init() {
     marginControls.classList.toggle('hidden', autoMargins);
 }
 init();
+// ... ALL previous code up to (not including) ======= Initial Setup =======
+
+// ======= Multi-Page Navigation =======
+const pages = [
+    document.getElementById("page-1"),
+    document.getElementById("page-2"),
+    document.getElementById("page-3"),
+    document.getElementById("page-4"),
+];
+const prevBtn = document.getElementById("prev-page");
+const nextBtn = document.getElementById("next-page");
+let pageIdx = 0;
+
+function showPage(idx) {
+    pages.forEach((page, i) => {
+        page.classList.toggle("hidden", i !== idx);
+    });
+    prevBtn.classList.toggle("hidden", idx === 0);
+    nextBtn.classList.toggle("hidden", idx === pages.length - 1);
+}
+prevBtn.addEventListener("click", () => {
+    if (pageIdx > 0) pageIdx--;
+    showPage(pageIdx);
+});
+nextBtn.addEventListener("click", () => {
+    if (pageIdx < pages.length - 1) pageIdx++;
+    showPage(pageIdx);
+});
+showPage(pageIdx);
+
+// When image is uploaded, always show the preview and update crop UI
+photoUploadInput.addEventListener('change', (e) => {
+    if (photoUploadInput.files && photoUploadInput.files[0]) {
+        let file = photoUploadInput.files[0];
+        if (!file.type.startsWith('image/')) return;
+        if (imgURL) URL.revokeObjectURL(imgURL);
+        imgURL = URL.createObjectURL(file);
+        imgObj.src = imgURL;
+        imgObj.onload = () => {
+            imgLoaded = true;
+            zoom = 1.0;
+            rotate = 0;
+            pan = { x: 0, y: 0 };
+            photoPreviewContainer.classList.remove('hidden');
+            photoPreview.src = imgURL;
+            cropRect = null;
+            cropActive = false;
+            cropBox.classList.add('hidden');
+            showCropUI(false);
+            updatePreviewTransform();
+            renderCanvas();
+        };
+    }
+});
+
+// Update preview in real time for all transforms
+function updatePreviewTransform() {
+    if (!imgLoaded) return;
+    // Always render preview centered with pan/zoom/rotate
+    photoPreview.style.transform = `translate(${pan.x}px,${pan.y}px) scale(${zoom}) rotate(${rotate}deg)`;
+    // Show/hide crop box if needed
+    if (cropActive && cropRect) updateCropBox();
+}
+
+// When preview controls are used, update preview and canvas in real time
+[zoomInBtn, zoomOutBtn, rotateLeftBtn, rotateRightBtn].forEach(btn => {
+    btn.addEventListener('click', () => {
+        updatePreviewTransform();
+        renderCanvas();
+    });
+});
+photoPreviewWrapper.addEventListener('mousemove', () => {
+    if (imgLoaded) updatePreviewTransform();
+});
+photoPreviewWrapper.addEventListener('touchmove', () => {
+    if (imgLoaded) updatePreviewTransform();
+});
+
+// Also update on crop
+function updateCropBox() {
+    if (!cropRect) return;
+    cropBox.style.left = cropRect.x + 'px';
+    cropBox.style.top = cropRect.y + 'px';
+    cropBox.style.width = cropRect.w + 'px';
+    cropBox.style.height = cropRect.h + 'px';
+    if (!cropBox.querySelector('.crop-handle')) addCropHandles();
+    updateCropSizeIndicator();
+    renderCanvas();
+}
+
+// Crop interaction: update canvas live while dragging/resizing crop box
+function cropPointerMove(e) {
+    if (!cropActive || !cropDragMode) return;
+    e.preventDefault();
+    const pointer = getPointer(e);
+    let dx = pointer.x - cropStartMouse.x;
+    let dy = pointer.y - cropStartMouse.y;
+    let pvW = photoPreviewWrapper.clientWidth;
+    let pvH = photoPreviewWrapper.clientHeight;
+    let dims = getPhotoDimsPx();
+    let asp = dims.width / dims.height;
+    let minW = 36, minH = minW / asp;
+
+    let r = { ...cropStartRect };
+
+    // Resizing
+    if (cropDragMode !== 'move') {
+        switch (cropDragMode) {
+            case 'nw': r.x += dx; r.y += dy; r.w -= dx; r.h -= dy; break;
+            case 'n': r.y += dy; r.h -= dy; break;
+            case 'ne': r.y += dy; r.w += dx; r.h -= dy; break;
+            case 'e': r.w += dx; break;
+            case 'se': r.w += dx; r.h += dy; break;
+            case 's': r.h += dy; break;
+            case 'sw': r.x += dx; r.w -= dx; r.h += dy; break;
+            case 'w': r.x += dx; r.w -= dx; break;
+        }
+        let newAsp = r.w / r.h;
+        if (Math.abs(newAsp - asp) > 0.01) {
+            if (['n','s'].includes(cropDragMode)) {
+                r.w = r.h * asp;
+                if (cropDragMode === 'n') r.x = cropStartRect.x + cropStartRect.w - r.w;
+            } else if (['e','w'].includes(cropDragMode)) {
+                r.h = r.w / asp;
+                if (cropDragMode === 'w') r.y = cropStartRect.y + cropStartRect.h - r.h;
+            } else {
+                let dw = r.w - cropStartRect.w, dh = r.h - cropStartRect.h;
+                if (Math.abs(dw) > Math.abs(dh)) {
+                    r.h = r.w / asp;
+                    if (cropDragMode.endsWith('n')) r.y = cropStartRect.y + cropStartRect.h - r.h;
+                } else {
+                    r.w = r.h * asp;
+                    if (cropDragMode.endsWith('w')) r.x = cropStartRect.x + cropStartRect.w - r.w;
+                }
+            }
+        }
+        r.w = Math.max(minW, r.w);
+        r.h = Math.max(minH, r.h);
+        if (r.x < 0) { r.w += r.x; r.x = 0;}
+        if (r.y < 0) { r.h += r.y; r.y = 0;}
+        if (r.x + r.w > pvW) r.w = pvW - r.x;
+        if (r.y + r.h > pvH) r.h = pvH - r.y;
+        cropRect = r;
+    }
+    if (cropDragMode === 'move') {
+        r.x = Math.max(0, Math.min(cropStartRect.x + dx, pvW - r.w));
+        r.y = Math.max(0, Math.min(cropStartRect.y + dy, pvH - r.h));
+        cropRect.x = r.x; cropRect.y = r.y;
+    }
+    updateCropBox();
+    updateCropSizeIndicator();
+    renderCanvas();
+}
+
+// ======= Initial Setup =======
+function init() {
+    updateUnitLabels();
+    updatePhotoDimsHint();
+    renderCanvas();
+    spacingControls.classList.toggle('hidden', autoSpacing);
+    marginControls.classList.toggle('hidden', autoMargins);
+    // Only page 1 is visible at start
+    showPage(0);
+}
+init();
