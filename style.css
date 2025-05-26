@@ -1,0 +1,504 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+:root {
+    --primary-color: #4CAF50; /* Green */
+    --primary-hover: #45a049;
+    --secondary-color: #007bff; /* Blue */
+    --secondary-hover: #0069d9;
+    --background-color: #f0f2f5;
+    --card-background: #ffffff;
+    --text-color: #333;
+    --light-text-color: #666;
+    --border-color: #ddd;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --focus-outline: rgba(76, 175, 80, 0.5); /* Green with transparency */
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+.app-container {
+    background-color: var(--card-background);
+    border-radius: 12px;
+    box-shadow: 0 8px 20px var(--shadow-color);
+    padding: 30px;
+    max-width: 800px;
+    width: 100%;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.motivation-message {
+    text-align: center;
+    color: var(--primary-color);
+    font-size: 1.5em;
+    margin-bottom: 30px;
+    font-weight: 600;
+}
+
+.app-header {
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 15px;
+}
+
+.app-header h2 {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 2.2em;
+    font-weight: 700;
+}
+
+.app-header p {
+    margin: 5px 0 0;
+    color: var(--light-text-color);
+    font-size: 0.9em;
+}
+
+.app-header p a {
+    color: var(--secondary-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.app-header p a:hover {
+    text-decoration: underline;
+    color: var(--secondary-hover);
+}
+
+.section {
+    background-color: #f9f9f9;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.section h3 {
+    margin-top: 0;
+    color: var(--primary-color);
+    font-size: 1.4em;
+    margin-bottom: 20px;
+    border-bottom: 1px dashed var(--border-color);
+    padding-bottom: 10px;
+}
+
+.radio-group, .input-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.radio-group label, .input-group label {
+    margin-right: 15px;
+    color: var(--text-color);
+    font-weight: 600;
+    min-width: 120px; /* Aligns labels */
+}
+
+.radio-group input[type="radio"] {
+    margin-right: 5px;
+}
+
+.radio-group label {
+    background-color: var(--background-color);
+    padding: 8px 15px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.radio-group input[type="radio"]:checked + label {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.radio-group input[type="radio"] {
+    display: none; /* Hide default radio button */
+}
+
+input[type="number"],
+input[type="text"],
+input[type="range"],
+select {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 1em;
+    color: var(--text-color);
+    flex-grow: 1;
+    max-width: 200px; /* For consistent width */
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus,
+select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px var(--focus-outline);
+}
+
+.input-group span {
+    margin-left: 10px;
+    color: var(--light-text-color);
+    font-size: 0.9em;
+}
+
+.pixel-density-group, .custom-page-size, .manual-spacing, .manual-margin {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed var(--border-color);
+}
+
+.dimension-note, .upload-note, .photo-hint, .dotted-line-note {
+    font-size: 0.85em;
+    color: var(--light-text-color);
+    margin-top: 10px;
+    margin-bottom: 0;
+}
+
+/* Upload Area */
+.upload-area {
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: #fafafa;
+}
+
+.upload-area:hover {
+    border-color: var(--primary-color);
+    background-color: #eaf7ea;
+}
+
+.upload-area p {
+    margin: 5px 0;
+    color: var(--light-text-color);
+}
+
+.upload-area a {
+    color: var(--secondary-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.upload-area a:hover {
+    text-decoration: underline;
+}
+
+.photo-preview-container {
+    position: relative;
+    width: 100%;
+    max-height: 400px;
+    overflow: hidden;
+    background-color: #e2e2e2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+#photoPreview {
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+    object-fit: contain; /* Ensures the image fits within the container */
+}
+
+.photo-preview-container .controls {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 5px;
+    padding: 8px 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.photo-preview-container .controls button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.2s ease;
+}
+
+.photo-preview-container .controls button:hover {
+    color: var(--primary-color);
+}
+
+.cropping-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: move; /* Indicates the overlay can be dragged */
+}
+
+.crop-box {
+    border: 2px dashed white;
+    position: relative;
+    box-sizing: border-box;
+    cursor: grab;
+}
+
+.crop-box::before, .crop-box::after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: white;
+    border-radius: 50%;
+}
+
+.crop-box::before { /* Top-left handle example */
+    top: -5px;
+    left: -5px;
+    cursor: nwse-resize;
+}
+.crop-box::after { /* Bottom-right handle example */
+    bottom: -5px;
+    right: -5px;
+    cursor: nwse-resize;
+}
+/* You'd need more for all 8 handles */
+
+
+/* Spacing and Margin sections */
+.spacing-group h4, .margin-group h4 {
+    color: var(--text-color);
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+.toggle-switch {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.toggle-switch input[type="checkbox"] {
+    height: 0;
+    width: 0;
+    visibility: hidden;
+}
+
+.toggle-switch label.toggle-label {
+    cursor: pointer;
+    text-indent: -9999px;
+    width: 50px;
+    height: 25px;
+    background: var(--light-text-color);
+    display: block;
+    border-radius: 100px;
+    position: relative;
+    margin-left: 10px; /* Space from the checkbox */
+    margin-right: 15px;
+}
+
+.toggle-switch label.toggle-label:after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 19px;
+    height: 19px;
+    background: #fff;
+    border-radius: 90px;
+    transition: 0.3s;
+}
+
+.toggle-switch input:checked + label.toggle-label {
+    background: var(--primary-color);
+}
+
+.toggle-switch input:checked + label.toggle-label:after {
+    left: calc(100% - 3px);
+    transform: translateX(-100%);
+}
+
+.toggle-switch label.toggle-label:active:after {
+    width: 25px;
+}
+
+/* Output Preview */
+.output-preview {
+    min-height: 250px;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    background-color: #e9e9e9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--light-text-color);
+    font-style: italic;
+    margin-bottom: 20px;
+    overflow: hidden; /* For generated image */
+    position: relative;
+}
+
+.output-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+    object-fit: contain;
+}
+
+.dotted-line-note {
+    text-align: center;
+    margin-top: -10px;
+    margin-bottom: 20px;
+}
+
+.download-options {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.download-options label {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+button {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+button:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.share-button {
+    background-color: var(--secondary-color);
+    margin-top: 30px;
+    width: 100%;
+    max-width: 300px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.share-button:hover {
+    background-color: var(--secondary-hover);
+}
+
+/* Credits */
+.credits {
+    text-align: center;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+    color: var(--light-text-color);
+    font-size: 0.9em;
+}
+
+.credits .instagram-link {
+    color: #E1306C; /* Instagram brand color */
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.credits .instagram-link:hover {
+    text-decoration: underline;
+    opacity: 0.9;
+}
+
+.credits .instagram-link .fab {
+    font-size: 1.2em;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .app-container {
+        padding: 20px;
+        margin: 15px;
+    }
+
+    .app-header h2 {
+        font-size: 1.8em;
+    }
+
+    .section {
+        padding: 20px;
+    }
+
+    .radio-group, .input-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .radio-group label, .input-group label {
+        margin-bottom: 8px;
+        min-width: auto;
+    }
+
+    input[type="number"],
+    input[type="range"],
+    select,
+    .radio-group label {
+        width: 100%;
+        max-width: none;
+        box-sizing: border-box;
+    }
+
+    .download-options {
+        flex-direction: column;
+    }
+
+    button {
+        width: 100%;
+    }
+}
