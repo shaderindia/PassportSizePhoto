@@ -4,24 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Nishix Passport Photo Maker</title>
-  <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header>
+  <header class="header-glass">
     <div class="header-title">
       <i class="fa-solid fa-id-card-clip"></i>
       Nishix Passport Photo Maker
     </div>
-    <div class="header-sub">All-in-one, easy, accurate!</div>
+    <div class="header-sub">All-in-one, easy, accurate! <span class="header-badge">NEW UI 2025</span></div>
   </header>
   <main>
-    <section class="card">
+    <section class="card card-glass">
       <h2><i class="fa fa-cog"></i> Photo & Page Settings</h2>
-      <div class="form-col">
+      <div class="form-row">
         <div class="form-group">
-          <label for="unit">Units</label>
+          <label for="unit"><i class="fa fa-ruler-combined"></i> Units</label>
           <select id="unit">
             <option value="mm">Millimeters (mm)</option>
             <option value="inch">Inches (inch)</option>
@@ -29,23 +29,25 @@
           </select>
         </div>
         <div class="form-group">
-          <label for="dpi">DPI</label>
+          <label for="dpi"><i class="fa fa-fingerprint"></i> DPI</label>
           <input type="number" id="dpi" value="300" min="50" max="1200">
         </div>
         <div class="form-group">
-          <label for="photo-width">Photo Width</label>
+          <label for="photo-width"><i class="fa fa-arrows-alt-h"></i> Photo Width</label>
           <input type="number" id="photo-width" min="1" step="0.01">
         </div>
         <div class="form-group">
-          <label for="photo-height">Photo Height</label>
+          <label for="photo-height"><i class="fa fa-arrows-alt-v"></i> Photo Height</label>
           <input type="number" id="photo-height" min="1" step="0.01">
         </div>
         <div class="form-group">
-          <label for="num-photos">Number of Photos</label>
+          <label for="num-photos"><i class="fa fa-th"></i> Number of Photos</label>
           <input type="number" id="num-photos" min="1" value="8">
         </div>
+      </div>
+      <div class="form-row">
         <div class="form-group">
-          <label for="page-size">Page Size</label>
+          <label for="page-size"><i class="fa fa-file"></i> Page Size</label>
           <select id="page-size">
             <option value="a4">A4 (210 x 297 mm)</option>
             <option value="4r">4R (102 x 152 mm)</option>
@@ -53,58 +55,73 @@
           </select>
         </div>
         <div id="custom-page-size" class="form-group" style="display:none;">
-          <label>Custom Page Size</label>
-          <div style="display:flex;gap:8px;">
+          <label><i class="fa fa-expand"></i> Custom Page</label>
+          <div class="custom-page-inputs">
             <input type="number" id="custom-width" min="1" step="0.01" placeholder="Width">
             <input type="number" id="custom-height" min="1" step="0.01" placeholder="Height">
           </div>
         </div>
       </div>
     </section>
-    <section class="card">
+    <section class="card card-glass">
       <h2><i class="fa fa-border-style"></i> Spacing & Margins</h2>
-      <div class="form-col">
+      <div class="form-row">
         <div class="form-group">
-          <label for="h-spacing">Horizontal Spacing</label>
+          <label for="h-spacing"><i class="fa fa-arrows-alt-h"></i> Horizontal Spacing</label>
           <input type="number" id="h-spacing" min="0" step="0.01" value="10">
         </div>
         <div class="form-group">
-          <label for="v-spacing">Vertical Spacing</label>
+          <label for="v-spacing"><i class="fa fa-arrows-alt-v"></i> Vertical Spacing</label>
           <input type="number" id="v-spacing" min="0" step="0.01" value="10">
         </div>
-        <div class="form-group">
-          <label><input type="checkbox" id="autocenter-margin" checked> Auto-Center Margins</label>
+        <div class="form-group form-switch">
+          <label for="autocenter-margin"><i class="fa fa-align-center"></i> Auto-Center Margins</label>
+          <label class="switch">
+            <input type="checkbox" id="autocenter-margin">
+            <span class="slider"></span>
+          </label>
         </div>
+        <div class="form-group form-switch">
+          <label for="show-cutlines"><i class="fa fa-grip-lines-vertical"></i> Show Chain Dot Lines</label>
+          <label class="switch">
+            <input type="checkbox" id="show-cutlines" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+      <div class="form-row">
         <div class="form-group">
-          <label for="margin-top">Top Margin</label>
+          <label for="margin-top"><i class="fa fa-arrow-up"></i> Top Margin</label>
           <input type="number" id="margin-top" min="0" step="0.01" value="10">
         </div>
         <div class="form-group">
-          <label for="margin-bottom">Bottom Margin</label>
+          <label for="margin-bottom"><i class="fa fa-arrow-down"></i> Bottom Margin</label>
           <input type="number" id="margin-bottom" min="0" step="0.01" value="10">
         </div>
         <div class="form-group">
-          <label for="margin-left">Left Margin</label>
+          <label for="margin-left"><i class="fa fa-arrow-left"></i> Left Margin</label>
           <input type="number" id="margin-left" min="0" step="0.01" value="10">
         </div>
         <div class="form-group">
-          <label for="margin-right">Right Margin</label>
+          <label for="margin-right"><i class="fa fa-arrow-right"></i> Right Margin</label>
           <input type="number" id="margin-right" min="0" step="0.01" value="10">
         </div>
       </div>
     </section>
-    <section class="card">
+    <section class="card card-glass">
       <h2><i class="fa fa-image"></i> Upload & Crop Photo</h2>
-      <div style="text-align:center;">
+      <div class="upload-area">
         <input type="file" id="photo-upload" accept="image/*" hidden>
-        <label for="photo-upload" class="btn-main" id="browse-label"><i class="fa fa-folder-open"></i> Browse Photo</label>
+        <label for="photo-upload" class="btn-main" id="browse-label">
+          <i class="fa fa-folder-open"></i> Browse Photo
+        </label>
       </div>
       <div class="photo-preview-container hidden" id="preview-section">
         <div id="photo-preview-wrapper" tabindex="0">
           <img id="photo-preview" alt="Preview">
           <div id="crop-box" class="hidden"></div>
         </div>
-        <div class="adjust-hint">Pan: drag • Zoom: wheel/pinch • Crop: drag/move box.</div>
+        <div class="adjust-hint glass">Pan: drag &bull; Zoom: wheel/pinch &bull; Crop: drag/move box.</div>
         <div class="adjust-tools">
           <button id="rotate-left" title="Rotate Left"><i class="fa fa-undo"></i></button>
           <button id="rotate-right" title="Rotate Right"><i class="fa fa-redo"></i></button>
@@ -112,9 +129,12 @@
         </div>
       </div>
     </section>
-    <section class="card" id="output-section">
+    <section class="card card-glass" id="output-section">
       <h2><i class="fa fa-print"></i> Sheet Preview & Download</h2>
-      <canvas id="output-canvas"></canvas>
+      <div class="canvas-area">
+        <canvas id="output-canvas"></canvas>
+        <div class="canvas-overlay"></div>
+      </div>
       <div class="output-controls">
         <label for="format"><i class="fa fa-image"></i> Format</label>
         <select id="format">
