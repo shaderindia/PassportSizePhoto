@@ -22,7 +22,6 @@
   --switch-checked: #00a8ff;
   --modal-backdrop: rgba(30,40,50,0.42);
 }
-
 body {
   font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif;
   background: linear-gradient(120deg, #e3f0ff 65%, #dbeafe 100%);
@@ -32,12 +31,10 @@ body {
   letter-spacing: 0.02em;
   transition: background .18s, color .18s;
 }
-
 body.dark {
   background: linear-gradient(120deg, #23293b 65%, #172033 100%);
   color: var(--text-dark);
 }
-
 header.header-glass {
   background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
   color: #fff;
@@ -52,9 +49,7 @@ header.header-glass {
   position: relative;
   z-index: 2;
 }
-.header-content {
-  flex: 1 1 auto;
-}
+.header-content { flex: 1 1 auto; }
 .header-title {
   font-size: 2.15rem;
   font-weight: 600;
@@ -65,9 +60,7 @@ header.header-glass {
   align-items: center;
   gap: 0.6rem;
 }
-.header-title i {
-  font-size: 1.6rem;
-}
+.header-title i { font-size: 1.6rem; }
 .header-sub {
   font-size: 1.08rem;
   font-weight: 400;
@@ -112,13 +105,11 @@ header.header-glass {
   color: #fff;
   outline: none;
 }
-
 main {
   max-width: 980px;
   margin: 0 auto 2.5rem auto;
   padding: 0 1.2rem;
 }
-
 .card {
   margin: 0 auto 2.1rem auto;
   padding: 2.2rem 2.5rem 2.1rem 2.5rem;
@@ -129,9 +120,7 @@ main {
   z-index: 1;
   border: 1.5px solid var(--border);
 }
-.card-glass {
-  backdrop-filter: blur(16px);
-}
+.card-glass { backdrop-filter: blur(16px); }
 .shadow-lg { box-shadow: 0 8px 40px 0 rgba(22,78,99,0.09); }
 .card h2 {
   font-size: 1.24rem;
@@ -148,7 +137,6 @@ main {
   grid-template-columns: repeat(auto-fit,minmax(180px,1fr));
   gap: 1.4rem 2.3rem;
 }
-
 .form-group {
   display: flex;
   flex-direction: column;
@@ -165,9 +153,7 @@ main {
   align-items: center;
   gap: .4em;
 }
-body.dark .form-group label {
-  color: var(--accent);
-}
+body.dark .form-group label { color: var(--accent); }
 .form-group input[type="number"], .form-group select {
   background: #f7fcff;
   border: 1.3px solid #d0e7ff;
@@ -179,7 +165,6 @@ body.dark .form-group label {
   margin-top: .1em;
   transition: border-color .15s;
 }
-
 body.dark .form-group input[type="number"], body.dark .form-group select {
   background: #23293b;
   color: #dce9f6;
@@ -188,9 +173,7 @@ body.dark .form-group input[type="number"], body.dark .form-group select {
 .form-group input[type="number"]:focus, .form-group select:focus {
   border-color: var(--primary);
 }
-.form-switch {
-  justify-content: flex-end;
-}
+.form-switch { justify-content: flex-end; }
 .switch {
   position: relative;
   display: inline-block;
@@ -206,9 +189,7 @@ body.dark .form-group input[type="number"], body.dark .form-group select {
   border-radius: 32px;
   transition: background 0.2s;
 }
-.switch input:checked + .slider {
-  background: var(--switch-checked);
-}
+.switch input:checked + .slider { background: var(--switch-checked); }
 .slider:before {
   position: absolute;
   content: "";
@@ -219,14 +200,11 @@ body.dark .form-group input[type="number"], body.dark .form-group select {
   box-shadow: 0 2px 6px #b8eaff88;
   transition: transform 0.2s;
 }
-.switch input:checked + .slider:before {
-  transform: translateX(20px);
-}
+.switch input:checked + .slider:before { transform: translateX(20px); }
 .custom-page-inputs {
   display: flex;
   gap: 0.5em;
 }
-
 .upload-area {
   text-align: center;
   margin: 1.2em 0 1.1em 0;
@@ -418,9 +396,7 @@ body.dark #output-canvas {
   color: #338be9;
   font-weight: 500;
 }
-body.dark .output-controls label {
-  color: var(--accent);
-}
+body.dark .output-controls label { color: var(--accent); }
 .output-controls select {
   background: #f7fcff;
   border: 1px solid #d0e7ff;
@@ -463,10 +439,7 @@ footer {
   text-align: center;
   box-shadow: 0 -5px 20px #cde8fa16;
 }
-body.dark footer {
-  background: #23293b;
-  color: #e2eaf5;
-}
+body.dark footer { background: #23293b; color: #e2eaf5; }
 .branding {
   display: flex;
   align-items: center;
@@ -480,9 +453,7 @@ body.dark footer {
   text-decoration: none;
   transition: color .13s;
 }
-body.dark .branding a, body.dark footer a {
-  color: var(--accent);
-}
+body.dark .branding a, body.dark footer a { color: var(--accent); }
 .branding a:hover, footer a:hover {
   color: var(--secondary);
   text-decoration: underline;
@@ -508,7 +479,6 @@ body.dark .branding a, body.dark footer a {
   transform: scale(1.05);
   outline: none;
 }
-
 /* Modal styles */
 .modal-glass {
   display: none;
