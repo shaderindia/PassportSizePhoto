@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="style.css">
     <!-- Font Awesome CDN for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <!-- Google Fonts for extra friendliness -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -20,7 +19,8 @@
     </header>
 
     <main>
-        <section class="card" id="photo-settings">
+        <!-- PAGE 1 -->
+        <section class="card page" id="page-1">
             <h2>1. Unit Selection</h2>
             <div class="form-group">
                 <label for="unit">Select Unit</label>
@@ -43,7 +43,7 @@
             </div>
         </section>
 
-        <section class="card" id="page-size-section">
+        <section class="card page" id="page-2">
             <h2>2. Page Size</h2>
             <div class="form-group radio-group">
                 <label>
@@ -64,7 +64,7 @@
             </div>
         </section>
 
-        <section class="card" id="photo-upload-section">
+        <section class="card page" id="page-3">
             <h2>3. Photo Upload</h2>
             <div class="form-group">
                 <input type="file" id="photo-upload" accept="image/*">
@@ -73,7 +73,6 @@
             <div class="photo-preview-container hidden">
                 <div id="photo-preview-wrapper" tabindex="0">
                     <img id="photo-preview" alt="Preview">
-                    <!-- Overlay and crop box will be injected here by JS -->
                     <div id="crop-box" class="hidden"></div>
                 </div>
                 <div class="adjust-hint">Adjust, zoom, and crop your photo for the perfect fit...</div>
@@ -87,8 +86,15 @@
             </div>
         </section>
 
-        <section class="card" id="arrangement-section">
-            <h2>4. Photo Arrangement</h2>
+        <!-- Navigation -->
+        <div class="nav-btns">
+            <button id="prev-page" class="hidden"><i class="fa fa-angle-left"></i> Previous</button>
+            <button id="next-page"><span>Next</span> <i class="fa fa-angle-right"></i></button>
+        </div>
+
+        <!-- PAGE 4 (Arrangement + Output) -->
+        <section class="card page hidden" id="page-4">
+            <h2>4. Arrangement & Download</h2>
             <div class="form-group">
                 <label for="num-photos">Number of Photos</label>
                 <input type="number" id="num-photos" min="1" value="8">
@@ -125,11 +131,10 @@
                     <input type="range" id="margin-right" min="0" max="50" value="15">
                 </div>
             </div>
-        </section>
-
-        <section class="card" id="output-section">
-            <h2>5. Canvas Output & Download</h2>
-            <canvas id="output-canvas"></canvas>
+            <div class="form-group">
+                <h3 style="margin-bottom:.5em;margin-top:1.1em;">Live Sheet Preview</h3>
+                <canvas id="output-canvas"></canvas>
+            </div>
             <div class="output-controls">
                 <label for="format">Format</label>
                 <select id="format">
@@ -141,7 +146,6 @@
             </div>
         </section>
     </main>
-
     <footer>
         <div class="branding">
             <span>App by <a href="https://www.instagram.com/nishix_vamp" target="_blank" rel="noopener">Nishikant Xalxo</a></span>
@@ -150,7 +154,6 @@
         </div>
         <button id="share-btn"><i class="fa fa-share-alt"></i> Share this App</button>
     </footer>
-
     <script src="script.js"></script>
 </body>
 </html>
