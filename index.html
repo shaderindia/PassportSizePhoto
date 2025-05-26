@@ -1,130 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nishix Passport Photo Maker</title>
-  <link rel="stylesheet" href="style.css" />
-  <script defer src="script.js"></script>
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-  />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nishix Passport Photo Maker</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Font Awesome CDN for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
-  <div class="container">
     <header>
-      <h1>Capture your moments perfectly, every time!</h1>
+        <h1>Capture your moments perfectly, every time!</h1>
     </header>
 
-    <section class="controls">
-      <h2>Photo Settings</h2>
+    <main>
+        <section class="card" id="photo-settings">
+            <h2>1. Unit Selection</h2>
+            <div class="form-group">
+                <label for="unit">Select Unit</label>
+                <select id="unit">
+                    <option value="mm">Millimeters (mm)</option>
+                    <option value="inch">Inches (inch)</option>
+                    <option value="px">Pixels (px)</option>
+                </select>
+            </div>
+            <div class="form-group dpi-group hidden" id="dpi-group">
+                <label for="dpi">DPI</label>
+                <input type="number" id="dpi" value="300" min="50" max="1200">
+            </div>
+            <div class="form-group photo-dimensions">
+                <label for="photo-width">Photo Width (<span class="unit-label">mm</span>)</label>
+                <input type="number" id="photo-width" min="1" value="35">
+                <label for="photo-height">Photo Height (<span class="unit-label">mm</span>)</label>
+                <input type="number" id="photo-height" min="1" value="45">
+                <div class="hint">Standard passport photo size is 35mm x 45mm</div>
+            </div>
+        </section>
 
-      <label>Unit:
-        <select id="unitSelect">
-          <option value="mm">Millimeters (mm)</option>
-          <option value="inch">Inches (inch)</option>
-          <option value="px">Pixels (px)</option>
-        </select>
-      </label>
+        <section class="card" id="page-size-section">
+            <h2>2. Page Size</h2>
+            <div class="form-group radio-group">
+                <label>
+                    <input type="radio" name="page-size" value="a4" checked> A4 (210 x 297 mm)
+                </label>
+                <label>
+                    <input type="radio" name="page-size" value="4r"> 4R (102 x 152 mm)
+                </label>
+                <label>
+                    <input type="radio" name="page-size" value="custom"> Custom
+                </label>
+            </div>
+            <div class="form-group custom-page-size hidden">
+                <label for="custom-width">Width (<span class="unit-label">mm</span>)</label>
+                <input type="number" id="custom-width" min="1" value="210">
+                <label for="custom-height">Height (<span class="unit-label">mm</span>)</label>
+                <input type="number" id="custom-height" min="1" value="297">
+            </div>
+        </section>
 
-      <div id="dpiContainer">
-        <label>DPI:
-          <input type="number" id="dpi" value="300" min="50" max="1200" />
-        </label>
-      </div>
+        <section class="card" id="photo-upload-section">
+            <h2>3. Photo Upload</h2>
+            <div class="form-group">
+                <input type="file" id="photo-upload" accept="image/*">
+                <label for="photo-upload" class="browse-btn"><i class="fa fa-folder-open"></i> Browse Files</label>
+            </div>
+            <div class="photo-preview-container hidden">
+                <div id="photo-preview-wrapper">
+                    <img id="photo-preview" alt="Preview">
+                    <div id="crop-box" class="hidden"></div>
+                </div>
+                <div class="adjust-hint">Adjust, zoom, and crop your photo for the perfect fit...</div>
+                <div class="adjust-tools">
+                    <button id="zoom-in" title="Zoom In"><i class="fa fa-search-plus"></i></button>
+                    <button id="zoom-out" title="Zoom Out"><i class="fa fa-search-minus"></i></button>
+                    <button id="rotate-left" title="Rotate Left"><i class="fa fa-undo"></i></button>
+                    <button id="rotate-right" title="Rotate Right"><i class="fa fa-redo"></i></button>
+                    <button id="crop-toggle" title="Crop Tool"><i class="fa fa-crop"></i></button>
+                </div>
+            </div>
+        </section>
 
-      <label>Photo Width:
-        <input type="number" id="photoWidth" value="35" />
-        <span class="unit-label">mm</span>
-      </label>
+        <section class="card" id="arrangement-section">
+            <h2>4. Photo Arrangement</h2>
+            <div class="form-group">
+                <label for="num-photos">Number of Photos</label>
+                <input type="number" id="num-photos" min="1" value="8">
+            </div>
+            <div class="form-group arrangement-section">
+                <label>Spacing</label>
+                <label class="switch">
+                    <input type="checkbox" id="auto-spacing" checked>
+                    <span class="slider"></span>
+                </label>
+                <span>Automatic Spacing</span>
+                <div id="spacing-controls" class="hidden">
+                    <label for="h-spacing">Horizontal (<span class="unit-label">mm</span>)</label>
+                    <input type="range" id="h-spacing" min="0" max="50" value="15">
+                    <label for="v-spacing">Vertical (<span class="unit-label">mm</span>)</label>
+                    <input type="range" id="v-spacing" min="0" max="50" value="15">
+                </div>
+            </div>
+            <div class="form-group arrangement-section">
+                <label>Margins</label>
+                <label class="switch">
+                    <input type="checkbox" id="auto-margins" checked>
+                    <span class="slider"></span>
+                </label>
+                <span>Automatic Margins</span>
+                <div id="margin-controls" class="hidden">
+                    <label for="margin-top">Top Margin (<span class="unit-label">mm</span>)</label>
+                    <input type="range" id="margin-top" min="0" max="50" value="15">
+                    <label for="margin-bottom">Bottom Margin (<span class="unit-label">mm</span>)</label>
+                    <input type="range" id="margin-bottom" min="0" max="50" value="15">
+                    <label for="margin-left">Left Margin (<span class="unit-label">mm</span>)</label>
+                    <input type="range" id="margin-left" min="0" max="50" value="15">
+                    <label for="margin-right">Right Margin (<span class="unit-label">mm</span>)</label>
+                    <input type="range" id="margin-right" min="0" max="50" value="15">
+                </div>
+            </div>
+        </section>
 
-      <label>Photo Height:
-        <input type="number" id="photoHeight" value="45" />
-        <span class="unit-label">mm</span>
-      </label>
-
-      <p class="info-note">Standard passport photo size is 35mm x 45mm</p>
-
-      <div class="page-size">
-        <label><input type="radio" name="pageSize" value="a4" checked /> A4</label>
-        <label><input type="radio" name="pageSize" value="4r" /> 4R</label>
-        <label><input type="radio" name="pageSize" value="custom" /> Custom</label>
-        <div id="customPageContainer">
-          <label>Custom Width: <input type="number" id="customPageWidth" /> <span class="unit-label">mm</span></label>
-          <label>Custom Height: <input type="number" id="customPageHeight" /> <span class="unit-label">mm</span></label>
-        </div>
-      </div>
-    </section>
-
-    <section class="upload-section">
-      <h2>Upload Photo</h2>
-      <input type="file" id="fileInput" accept="image/*" />
-      <div class="preview-container">
-        <img id="photoPreview" src="" alt="Preview" />
-        <div id="cropBox"></div>
-      </div>
-      <p id="adjustHint" class="hidden">Adjust, zoom, and crop your photo for the perfect fit. Drag the photo to pan, use the crop tool to define the area.</p>
-      <div class="adjust-controls">
-        <button id="zoomIn"><i class="fas fa-search-plus"></i></button>
-        <button id="zoomOut"><i class="fas fa-search-minus"></i></button>
-        <button id="rotateLeft"><i class="fas fa-undo"></i></button>
-        <button id="rotateRight"><i class="fas fa-redo"></i></button>
-        <button id="cropToolBtn"><i class="fas fa-crop"></i></button>
-      </div>
-    </section>
-
-    <section class="arrangement-section">
-      <h2>Photo Arrangement</h2>
-
-      <label>Number of Photos:
-        <input type="number" id="photoCount" min="1" value="8" />
-      </label>
-
-      <div class="spacing-controls">
-        <h3>Spacing</h3>
-        <label>Horizontal Spacing:
-          <input type="range" id="horizontalSpacing" min="0" max="20" value="5" />
-          <span id="horizontalSpacingValue">5 mm</span>
-        </label>
-
-        <label>Vertical Spacing:
-          <input type="range" id="verticalSpacing" min="0" max="20" value="5" />
-          <span id="verticalSpacingValue">5 mm</span>
-        </label>
-      </div>
-
-      <div class="margin-controls">
-        <h3>Margins</h3>
-        <label>Top Margin:
-          <input type="range" id="topMargin" min="0" max="50" value="10" />
-        </label>
-        <label>Left Margin:
-          <input type="range" id="leftMargin" min="0" max="50" value="10" />
-        </label>
-      </div>
-    </section>
-
-    <section class="preview-download">
-      <h2>Preview & Download</h2>
-      <canvas id="outputCanvas"></canvas>
-      <p>Dotted lines will be included for easy cutting.</p>
-
-      <label>Download Format:
-        <select id="downloadFormat">
-          <option value="jpg">JPG (High Quality)</option>
-          <option value="png">PNG (High Quality)</option>
-        </select>
-      </label>
-
-      <button id="downloadBtn"><i class="fas fa-download"></i> Download Photos</button>
-    </section>
+        <section class="card" id="output-section">
+            <h2>5. Canvas Output & Download</h2>
+            <canvas id="output-canvas"></canvas>
+            <div class="output-controls">
+                <label for="format">Format</label>
+                <select id="format">
+                    <option value="jpg">JPG</option>
+                    <option value="png">PNG</option>
+                </select>
+                <button id="download-btn"><i class="fa fa-download"></i> Download</button>
+                <button id="download-hq-btn"><i class="fa fa-download"></i> Download High Quality</button>
+            </div>
+        </section>
+    </main>
 
     <footer>
-      <p>App by <a href="https://www.instagram.com/nishix_vamp/" target="_blank">Nishikant Xalxo</a></p>
-      <p>Made with ❤️ by <a href="https://www.instagram.com/nishix_vamp/" target="_blank"><i class="fab fa-instagram"></i> Nishix</a></p>
-      <button id="shareBtn"><i class="fas fa-share"></i> Share this App</button>
+        <div class="branding">
+            <span>App by <a href="https://www.instagram.com/nishix_vamp" target="_blank" rel="noopener">Nishikant Xalxo</a></span>
+            <span class="divider">|</span>
+            <span>Made with <span class="heart">❤️</span> by <a href="https://www.instagram.com/nishix_vamp" target="_blank" rel="noopener"><i class="fab fa-instagram"></i> Nishix</a></span>
+        </div>
+        <button id="share-btn"><i class="fa fa-share-alt"></i> Share this App</button>
     </footer>
-  </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
