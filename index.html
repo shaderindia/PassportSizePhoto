@@ -5,111 +5,126 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nishix Passport Photo Maker</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <script defer src="script.js"></script>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+  />
 </head>
 <body>
-  <header>
-    <h1>Nishix Passport Photo Maker</h1>
-    <p class="motivation">Capture your moments perfectly, every time!</p>
-  </header>
-  
-  <main>
-    <section class="unit-section">
-      <h2>Unit Selection</h2>
-      <select id="unitSelect">
-        <option value="mm">Millimeters (mm)</option>
-        <option value="inch">Inches (inch)</option>
-        <option value="px">Pixels (px)</option>
-      </select>
-      <div id="dpiInputWrapper" class="hidden">
-        <label for="dpiInput">Pixel Density (DPI):</label>
-        <input type="number" id="dpiInput" min="50" max="1200" value="300" />
-      </div>
-    </section>
+  <div class="container">
+    <header>
+      <h1>Capture your moments perfectly, every time!</h1>
+    </header>
 
-    <section class="photo-dimensions">
-      <h2>Photo Dimensions</h2>
-      <label>Width: <input type="number" id="photoWidth" /></label>
-      <label>Height: <input type="number" id="photoHeight" /></label>
-      <span id="dimensionUnit">mm</span>
-      <p class="note">Standard passport photo size is 35mm x 45mm.</p>
-    </section>
+    <section class="controls">
+      <h2>Photo Settings</h2>
 
-    <section class="page-size">
-      <h2>Page Size Selection</h2>
-      <label><input type="radio" name="pageSize" value="a4" checked /> A4 (210 x 297 mm)</label>
-      <label><input type="radio" name="pageSize" value="4r" /> 4R (102 x 152 mm)</label>
-      <label><input type="radio" name="pageSize" value="custom" /> Custom</label>
-      <div id="customPageSize" class="hidden">
-        <label>Width: <input type="number" id="customWidth" /></label>
-        <label>Height: <input type="number" id="customHeight" /></label>
-        <span id="pageUnit">mm</span>
-      </div>
-    </section>
+      <label>Unit:
+        <select id="unitSelect">
+          <option value="mm">Millimeters (mm)</option>
+          <option value="inch">Inches (inch)</option>
+          <option value="px">Pixels (px)</option>
+        </select>
+      </label>
 
-    <section class="photo-upload">
-      <h2>Upload & Adjust Photo</h2>
-      <div id="uploadArea" class="upload-area">
-        <p id="uploadText">Drag & Drop or <span class="browse">Browse Files</span></p>
-        <input type="file" id="fileInput" accept="image/*" hidden />
+      <div id="dpiContainer">
+        <label>DPI:
+          <input type="number" id="dpi" value="300" min="50" max="1200" />
+        </label>
       </div>
-      <div id="photoEditor" class="hidden">
-        <div id="photoPreviewContainer">
-          <img id="photoPreview" />
-          <div id="cropBox" class="hidden"></div>
+
+      <label>Photo Width:
+        <input type="number" id="photoWidth" value="35" />
+        <span class="unit-label">mm</span>
+      </label>
+
+      <label>Photo Height:
+        <input type="number" id="photoHeight" value="45" />
+        <span class="unit-label">mm</span>
+      </label>
+
+      <p class="info-note">Standard passport photo size is 35mm x 45mm</p>
+
+      <div class="page-size">
+        <label><input type="radio" name="pageSize" value="a4" checked /> A4</label>
+        <label><input type="radio" name="pageSize" value="4r" /> 4R</label>
+        <label><input type="radio" name="pageSize" value="custom" /> Custom</label>
+        <div id="customPageContainer">
+          <label>Custom Width: <input type="number" id="customPageWidth" /> <span class="unit-label">mm</span></label>
+          <label>Custom Height: <input type="number" id="customPageHeight" /> <span class="unit-label">mm</span></label>
         </div>
-        <div class="controls">
-          <button id="zoomIn"><i class="fas fa-search-plus"></i></button>
-          <button id="zoomOut"><i class="fas fa-search-minus"></i></button>
-          <button id="rotateLeft"><i class="fas fa-undo"></i></button>
-          <button id="rotateRight"><i class="fas fa-redo"></i></button>
-          <button id="toggleCrop"><i class="fas fa-crop"></i></button>
-        </div>
-        <p class="hint">Adjust, zoom, and crop your photo for the perfect fit. Drag the photo to pan, use the crop tool to define the area.</p>
       </div>
     </section>
 
-    <section class="arrangement">
+    <section class="upload-section">
+      <h2>Upload Photo</h2>
+      <input type="file" id="fileInput" accept="image/*" />
+      <div class="preview-container">
+        <img id="photoPreview" src="" alt="Preview" />
+        <div id="cropBox"></div>
+      </div>
+      <p id="adjustHint" class="hidden">Adjust, zoom, and crop your photo for the perfect fit. Drag the photo to pan, use the crop tool to define the area.</p>
+      <div class="adjust-controls">
+        <button id="zoomIn"><i class="fas fa-search-plus"></i></button>
+        <button id="zoomOut"><i class="fas fa-search-minus"></i></button>
+        <button id="rotateLeft"><i class="fas fa-undo"></i></button>
+        <button id="rotateRight"><i class="fas fa-redo"></i></button>
+        <button id="cropToolBtn"><i class="fas fa-crop"></i></button>
+      </div>
+    </section>
+
+    <section class="arrangement-section">
       <h2>Photo Arrangement</h2>
-      <label>Number of Photos: <input type="number" id="numPhotos" value="8" min="1" /></label>
 
-      <div class="spacing">
-        <label><input type="checkbox" id="autoSpacing" checked /> Automatic Spacing</label>
-        <div id="manualSpacing" class="hidden">
-          <label>Horizontal: <input type="range" id="hSpacing" min="0" max="20" value="5" /></label>
-          <label>Vertical: <input type="range" id="vSpacing" min="0" max="20" value="5" /></label>
-        </div>
+      <label>Number of Photos:
+        <input type="number" id="photoCount" min="1" value="8" />
+      </label>
+
+      <div class="spacing-controls">
+        <h3>Spacing</h3>
+        <label>Horizontal Spacing:
+          <input type="range" id="horizontalSpacing" min="0" max="20" value="5" />
+          <span id="horizontalSpacingValue">5 mm</span>
+        </label>
+
+        <label>Vertical Spacing:
+          <input type="range" id="verticalSpacing" min="0" max="20" value="5" />
+          <span id="verticalSpacingValue">5 mm</span>
+        </label>
       </div>
 
-      <div class="margins">
-        <label><input type="checkbox" id="autoMargins" checked /> Automatic Margins</label>
-        <div id="manualMargins" class="hidden">
-          <label>Top: <input type="range" id="topMargin" min="0" max="50" value="10" /></label>
-          <label>Left: <input type="range" id="leftMargin" min="0" max="50" value="10" /></label>
-        </div>
+      <div class="margin-controls">
+        <h3>Margins</h3>
+        <label>Top Margin:
+          <input type="range" id="topMargin" min="0" max="50" value="10" />
+        </label>
+        <label>Left Margin:
+          <input type="range" id="leftMargin" min="0" max="50" value="10" />
+        </label>
       </div>
     </section>
 
-    <section class="output">
+    <section class="preview-download">
       <h2>Preview & Download</h2>
       <canvas id="outputCanvas"></canvas>
-      <p class="note">Dotted lines will be included for easy cutting.</p>
+      <p>Dotted lines will be included for easy cutting.</p>
+
       <label>Download Format:
         <select id="downloadFormat">
           <option value="jpg">JPG (High Quality)</option>
           <option value="png">PNG (High Quality)</option>
         </select>
       </label>
+
       <button id="downloadBtn"><i class="fas fa-download"></i> Download Photos</button>
     </section>
-  </main>
 
-  <footer>
-    <p>App by <a href="https://www.instagram.com/nishix_vamp/" target="_blank">Nishikant Xalxo</a></p>
-    <button id="shareBtn"><i class="fas fa-share"></i> Share this App</button>
-    <p class="credits">Made with ❤️ by <a href="https://www.instagram.com/nishix_vamp/" target="_blank"><i class="fab fa-instagram"></i> Nishix</a>.</p>
-  </footer>
-
-  <script src="script.js"></script>
+    <footer>
+      <p>App by <a href="https://www.instagram.com/nishix_vamp/" target="_blank">Nishikant Xalxo</a></p>
+      <p>Made with ❤️ by <a href="https://www.instagram.com/nishix_vamp/" target="_blank"><i class="fab fa-instagram"></i> Nishix</a></p>
+      <button id="shareBtn"><i class="fas fa-share"></i> Share this App</button>
+    </footer>
+  </div>
 </body>
 </html>
