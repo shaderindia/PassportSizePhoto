@@ -1,4 +1,4 @@
-// FULL ADVANCED PASSPORT PHOTO MAKER - ULTRA SMOOTH MOBILE PINCH ZOOM & ALL FEATURES
+// FULL ADVANCED PASSPORT PHOTO MAKER - ULTRA SMOOTH MOBILE PINCH ZOOM & ALL FEATURES + RESIZABLE CROP
 document.addEventListener('DOMContentLoaded', function () {
   // ==== Element References ====
   const unitSelect = document.getElementById('unit');
@@ -345,7 +345,7 @@ document.addEventListener('DOMContentLoaded', function () {
     renderCanvas();
   }, { passive: false });
 
-  // ==== Cropping ====
+  // ==== Cropping (FULLY RESIZABLE) ====
   let cropOverlay = null;
   function showCropUI(show) {
     if (!cropOverlay) {
@@ -388,27 +388,16 @@ document.addEventListener('DOMContentLoaded', function () {
     let el = document.getElementById('crop-size-indicator');
     if (el) el.textContent = `${w} × ${h} ${unitStr}`;
   }
-  cropToggleBtn.addEventListener('click', () => {
-    cropActive = !cropActive;
-    cropToggleBtn.classList.toggle('active', cropActive);
-    showCropUI(cropActive);
-    if (cropActive) {
-      let pvW = photoPreviewWrapper.clientWidth, pvH = photoPreviewWrapper.clientHeight;
-      let dims = getPhotoDimsPx();
-      let asp = dims.width / dims.height;
-      let w = pvW * 0.7, h = pvH * 0.7;
-      if (w / h > asp) w = h * asp; else h = w / asp;
-      cropRect = { x: (pvW - w)/2, y: (pvH-h)/2, w: w, h: h };
-      updateCropBox();
-      cropBox.classList.remove('hidden');
-      addCropHandles();
-      updateCropSizeIndicator();
-    } else {
-      cropBox.classList.add('hidden');
-      showCropUI(false);
-    }
-    updatePreviewTransform();
-  });
+  function updateCropBox() {
+    if (!cropRect) return;
+    cropBox.style.left = cropRect.x + 'px';
+    cropBox.style.top = cropRect.y + 'px';
+    cropBox.style.width = cropRect.w + 'px';
+    cropBox.style.height = cropRect.h + 'px';
+    if (!cropBox.querySelector('.crop-handle')) addCropHandles();
+    updateCropSizeIndicator();
+  }
+  // --- Handle crop move/resize ---
   let cropDragMode = null, cropStartMouse = null, cropStartRect = null;
   function getPointer(e) {
     if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -446,14 +435,15 @@ document.addEventListener('DOMContentLoaded', function () {
     } else {
       switch (cropDragMode) {
         case 'nw': r.x += dx; r.y += dy; r.w -= dx; r.h -= dy; break;
-        case 'n': r.y += dy; r.h -= dy; break;
+        case 'n':  r.y += dy; r.h -= dy; break;
         case 'ne': r.y += dy; r.w += dx; r.h -= dy; break;
-        case 'e': r.w += dx; break;
+        case 'e':  r.w += dx; break;
         case 'se': r.w += dx; r.h += dy; break;
-        case 's': r.h += dy; break;
+        case 's':  r.h += dy; break;
         case 'sw': r.x += dx; r.w -= dx; r.h += dy; break;
-        case 'w': r.x += dx; r.w -= dx; break;
+        case 'w':  r.x += dx; r.w -= dx; break;
       }
+      // Maintain aspect ratio (resize along the dominant axis)
       let newAsp = r.w / r.h;
       if (Math.abs(newAsp - asp) > 0.01) {
         if (['n','s'].includes(cropDragMode)) {
@@ -496,15 +486,29 @@ document.addEventListener('DOMContentLoaded', function () {
   window.addEventListener('touchmove', cropPointerMove, { passive: false });
   window.addEventListener('mouseup', cropPointerUp);
   window.addEventListener('touchend', cropPointerUp);
-  function updateCropBox() {
-    if (!cropRect) return;
-    cropBox.style.left = cropRect.x + 'px';
-    cropBox.style.top = cropRect.y + 'px';
-    cropBox.style.width = cropRect.w + 'px';
-    cropBox.style.height = cropRect.h + 'px';
-    if (!cropBox.querySelector('.crop-handle')) addCropHandles();
-    updateCropSizeIndicator();
-  }
+
+  cropToggleBtn.addEventListener('click', () => {
+    cropActive = !cropActive;
+    cropToggleBtn.classList.toggle('active', cropActive);
+    showCropUI(cropActive);
+    if (cropActive) {
+      let pvW = photoPreviewWrapper.clientWidth, pvH = photoPreviewWrapper.clientHeight;
+      let dims = getPhotoDimsPx();
+      let asp = dims.width / dims.height;
+      let w = pvW * 0.7, h = pvH * 0.7;
+      if (w / h > asp) w = h * asp; else h = w / asp;
+      cropRect = { x: (pvW - w)/2, y: (pvH-h)/2, w: w, h: h };
+      updateCropBox();
+      cropBox.classList.remove('hidden');
+      addCropHandles();
+      updateCropSizeIndicator();
+    } else {
+      cropBox.classList.add('hidden');
+      showCropUI(false);
+    }
+    updatePreviewTransform();
+  });
+
   rotateLeftBtn.addEventListener('click', () => {
     rotate = (rotate - 90) % 360;
     snapPreviewTransform();
