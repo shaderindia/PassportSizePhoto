@@ -6,236 +6,57 @@
     <title>Passport Photo Creator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Face-api.js for AI face detection -->
-    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
-        /* [CSS unchanged, see previous answer for full code] */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8;
-            color: #334155;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #f0f4f8; color: #334155; display: flex; flex-direction: column; min-height: 100vh; }
         .container { max-width: 1200px; margin: 0 auto; padding: 1rem; flex-grow: 1; }
-        .app-section {
-            background-color: #ffffff;
-            border-radius: 1rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            padding: 2rem;
-            margin-bottom: 2rem;
-            display: none;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
-        }
+        .app-section { background-color: #ffffff; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); padding: 2rem; margin-bottom: 2rem; display: none; opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease-out, transform 0.5s ease-out; }
         .app-section.active { display: block; opacity: 1; transform: translateY(0);}
-        h1, h2, h3 {
-            color: #1e293b;
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-        .btn-primary {
-            background-image: linear-gradient(to right, #6366f1, #8b5cf6);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.75rem;
-            font-weight: 500;
-            transition: all 0.2s ease-in-out;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 10px -1px rgba(0, 0, 0, 0.15), 0 3px 6px -1px rgba(0, 0, 0, 0.08);
-        }
-        .btn-primary:disabled {
-            background-image: none;
-            background-color: #cbd5e1;
-            color: #64748b;
-            cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
-        }
-        .btn-secondary {
-            background-color: #e2e8f0;
-            color: #475569;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.75rem;
-            font-weight: 500;
-            transition: all 0.2s ease-in-out;
-            border: none;
-            cursor: pointer;
-        }
+        h1, h2, h3 { color: #1e293b; font-weight: 600; margin-bottom: 1rem; }
+        .btn-primary { background-image: linear-gradient(to right, #6366f1, #8b5cf6); color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 500; transition: all 0.2s ease-in-out; border: none; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);}
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 10px -1px rgba(0, 0, 0, 0.15), 0 3px 6px -1px rgba(0, 0, 0, 0.08);}
+        .btn-primary:disabled { background-image: none; background-color: #cbd5e1; color: #64748b; cursor: not-allowed; box-shadow: none; transform: none;}
+        .btn-secondary { background-color: #e2e8f0; color: #475569; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 500; transition: all 0.2s ease-in-out; border: none; cursor: pointer;}
         .btn-secondary:hover { background-color: #cbd5e1; }
-        input[type="file"] {
+        input[type="file"] { display: none; }
+        .upload-area {
             border: 2px dashed #94a3b8;
-            padding: 1rem;
+            background: #f8fafc;
+            height: 180px;
             border-radius: 0.75rem;
-            background-color: #f8fafc;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-        input[type="file"]:hover { background-color: #eff6ff; }
-        canvas {
-            border: 1px solid #cbd5e1;
-            background-color: #f8fafc;
-            border-radius: 0.75rem;
-            display: block;
-            margin: 0 auto;
-        }
-        .preview-output-container {
             display: flex;
+            align-items: center;
             justify-content: center;
-            align-items: center;
-            background-color: #f8fafc;
-            border-radius: 0.75rem;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
-            padding: 1rem;
-            height: 600px;
-            max-width: 100%;
-            overflow: hidden;
-        }
-        .option-group label { display: flex; align-items: center; margin-bottom: 0.5rem; cursor: pointer;}
-        .option-group input[type="radio"], .option-group input[type="checkbox"] { margin-right: 0.5rem;}
-        input[type="number"], input[type="color"] {
-            border: 1px solid #cbd5e1;
-            border-radius: 0.5rem;
-            padding: 0.5rem 0.75rem;
-            margin-left: 0.5rem;
-            width: 80px;
-        }
-        input[type="number"]:disabled { background-color: #e2e8f0; cursor: not-allowed; }
-        .footer {
-            background-color: #1e293b;
-            color: #e2e8f0;
-            padding: 2rem;
-            text-align: center;
-            border-top-left-radius: 1rem;
-            border-top-right-radius: 1rem;
-            margin-top: auto;
-        }
-        .footer a {
-            color: #a78bfa;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4em;
-        }
-        .footer a:hover { text-decoration: underline; }
-        .message-box {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: #fff;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            z-index: 1000;
-            display: none;
             flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-            border: 2px solid #6366f1;
-            text-align: center;
-        }
-        .message-box button {
-            background-color: #6366f1;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            border: none;
             cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
+            margin-bottom: 1.5rem;
         }
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            z-index: 999;
-            display: none;
-        }
-        .crop-area {
-            position: absolute;
-            border: 2px dashed #8b5cf6;
-            cursor: grab;
-            touch-action: none;
-            box-sizing: border-box;
-        }
-        .crop-handle {
-            position: absolute;
-            width: 16px;
-            height: 16px;
-            background-color: #8b5cf6;
-            border: 2px solid white;
-            border-radius: 50%;
-            cursor: nwse-resize;
-            touch-action: none;
-        }
+        .upload-area.dragover { background: #e0e7ef; border-color: #6366f1; }
+        .upload-area .upload-icon { font-size: 2.75rem; color: #6366f1; margin-bottom: 0.5rem; }
+        .upload-area .upload-text { font-size: 1.1rem; color: #334155; }
+        .upload-area .upload-hint { font-size: 0.9rem; color: #64748b; }
+        .upload-area .thumb-preview { margin-top: 1rem; max-height: 100px; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.07);}
+        .upload-error { color: #dc2626; font-size: 0.98em; margin-top: 0.6em;}
+        canvas { border: 1px solid #cbd5e1; background-color: #f8fafc; border-radius: 0.75rem; display: block; margin: 0 auto;}
+        .preview-output-container { display: flex; justify-content: center; align-items: center; background-color: #f8fafc; border-radius: 0.75rem; box-shadow: inset 0 2px 4px rgba(0,0,0,0.06); padding: 1rem; height: 600px; max-width: 100%; overflow: hidden;}
+        .footer { background-color: #1e293b; color: #e2e8f0; padding: 2rem; text-align: center; border-top-left-radius: 1rem; border-top-right-radius: 1rem; margin-top: auto;}
+        .footer a { color: #a78bfa; text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+        .message-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #fff; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 10px 20px rgba(0,0,0,0.2); z-index: 1000; display: none; flex-direction: column; align-items: center; gap: 1rem; border: 2px solid #6366f1; text-align: center;}
+        .message-box button { background-color: #6366f1; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;}
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 999; display: none;}
+        .crop-area { position: absolute; border: 2px dashed #8b5cf6; cursor: grab; touch-action: none; box-sizing: border-box;}
+        .crop-handle { position: absolute; width: 16px; height: 16px; background-color: #8b5cf6; border: 2px solid white; border-radius: 50%; cursor: nwse-resize; touch-action: none;}
         .crop-handle.top-left { top: -8px; left: -8px; }
         .crop-handle.top-right { top: -8px; right: -8px; cursor: nesw-resize; }
         .crop-handle.bottom-left { bottom: -8px; left: -8px; cursor: nesw-resize; }
         .crop-handle.bottom-right { bottom: -8px; right: -8px; }
-        .crop-container {
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            max-width: 100%;
-            height: 400px;
-            background-color: #f8fafc;
-            border-radius: 0.75rem;
-            border: 1px solid #cbd5e1;
-            margin-top: 1rem;
-        }
-        .crop-container img {
-            max-width: none;
-            max-height: none;
-            position: absolute;
-            cursor: grab;
-            touch-action: none;
-            transform-origin: 0 0;
-        }
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(255, 255, 255, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1001;
-            font-size: 1.5rem;
-            color: #6366f1;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left-color: #6366f1;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        /* Instagram logo icon style */
-        .insta-logo {
-            width: 1.25em;
-            height: 1.25em;
-            vertical-align: middle;
-        }
+        .crop-container { position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center; max-width: 100%; height: 400px; background-color: #f8fafc; border-radius: 0.75rem; border: 1px solid #cbd5e1; margin-top: 1rem;}
+        .crop-container img { max-width: none; max-height: none; position: absolute; cursor: grab; touch-action: none; transform-origin: 0 0;}
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.8); display: flex; justify-content: center; align-items: center; z-index: 1001; font-size: 1.5rem; color: #6366f1; flex-direction: column; gap: 1rem;}
+        .spinner { border: 4px solid rgba(0, 0, 0, 0.1); border-left-color: #6366f1; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;}
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -251,40 +72,358 @@
     <header class="bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-8 text-center rounded-b-xl shadow-lg">
         <h1 class="text-4xl font-bold mb-2">Passport Photo Creator</h1>
         <p class="text-lg">Get ready to make perfect passport photos with ease.</p>
-        <p class="mt-4 text-md">— Nishikant Xalxo
-            <a href="https://www.instagram.com/nishix_vamp" target="_blank" class="text-white hover:underline font-medium">
-                <!-- Instagram SVG logo -->
-                <svg class="insta-logo" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <rect width="20" height="20" x="2" y="2" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
-                    <circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
-                    <circle cx="17" cy="7" r="1.5" fill="currentColor"/>
-                </svg>
-                @nishix_vamp
-            </a>
-        </p>
+        <p class="mt-4 text-md">— Nishikant Xalxo <a href="https://www.instagram.com/nishix_vamp" target="_blank" class="text-white hover:underline font-medium">@nishix_vamp</a></p>
     </header>
-    <!-- [Remaining HTML unchanged, see previous answer for all sections, e.g. main, footer, script] -->
     <main class="container py-8">
-        <!-- [All your app sections go here, unchanged from previous full code] -->
-        <!-- ... -->
+        <section id="photo-upload-section" class="app-section active">
+            <h2 class="text-2xl mb-4">1. Upload & Crop Your Photo</h2>
+            <p class="mb-4 text-gray-600">Upload your photo by dragging & dropping, pasting, or clicking below. Then, use the handles to resize the crop frame and drag the image to position it.</p>
+            <div class="upload-area" id="uploadArea" tabindex="0">
+                <span class="upload-icon">📷</span>
+                <span class="upload-text">Drag & drop, paste, or <span class="underline text-indigo-600 cursor-pointer" id="uploadBrowseTrigger">browse</span> to upload</span>
+                <span class="upload-hint">JPG, PNG, WEBP, BMP, HEIC. Max 10MB.</span>
+                <img class="thumb-preview hidden" id="thumbPreview" alt="preview">
+                <div class="upload-error" id="uploadError"></div>
+                <input type="file" id="photoUpload" accept="image/*,.jpg,.jpeg,.png,.webp,.bmp,.heic,.heif">
+            </div>
+            <div id="cropContainer" class="crop-container hidden">
+                <img id="uploadedImage" class="absolute hidden" alt="Uploaded Image">
+                <div id="cropArea" class="crop-area">
+                    <div class="crop-handle top-left" data-handle="tl"></div>
+                    <div class="crop-handle top-right" data-handle="tr"></div>
+                    <div class="crop-handle bottom-left" data-handle="bl"></div>
+                    <div class="crop-handle bottom-right" data-handle="br"></div>
+                </div>
+            </div>
+            <div class="flex justify-center items-center gap-4 mt-4">
+                <button id="zoomOutBtn" class="btn-secondary px-4 py-2 text-xl font-bold">-</button>
+                <span class="text-gray-700">Zoom: <span id="zoomLevel">100%</span></span>
+                <button id="zoomInBtn" class="btn-secondary px-4 py-2 text-xl font-bold">+</button>
+            </div>
+            <div class="flex justify-between gap-4 mt-6">
+                <button id="resetBtn" class="btn-secondary">Reset</button>
+                <button id="downloadBtn" class="btn-primary" disabled>Download Cropped Photo</button>
+            </div>
+        </section>
+        <section id="preview-section" class="app-section">
+            <h2 class="text-2xl mb-4">2. Cropped Preview</h2>
+            <div class="preview-output-container flex justify-center items-center bg-gray-100 p-4 rounded-lg shadow-inner">
+                <canvas id="previewCanvas"></canvas>
+            </div>
+            <div class="flex justify-between gap-4 mt-8">
+                <button id="backToUploadBtn" class="btn-secondary">Back: Upload & Crop</button>
+                <button id="saveBtn" class="btn-primary">Download</button>
+            </div>
+        </section>
     </main>
     <footer class="footer">
         <p class="text-lg mb-2">"Success is not final, failure is not fatal: It is the courage to continue that counts."</p>
-        <p class="text-md">— Nishikant Xalxo
-            <a href="https://www.instagram.com/nishix_vamp" target="_blank">
-                <!-- Instagram SVG logo -->
-                <svg class="insta-logo" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <rect width="20" height="20" x="2" y="2" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
-                    <circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
-                    <circle cx="17" cy="7" r="1.5" fill="currentColor"/>
-                </svg>
-                @nishix_vamp
-            </a>
-        </p>
+        <p class="text-md">— Nishikant Xalxo <a href="https://www.instagram.com/nishix_vamp" target="_blank">@nishix_vamp</a></p>
     </footer>
     <script>
-        // [Insert the same JavaScript from previous answer here.]
-        // ... (Unchanged JS for photo upload, face detection, cropping, and the rest)
+        // --- Utility Functions for Message Box and Loading Overlay ---
+        function showMessage(message) {
+            document.getElementById('messageText').textContent = message;
+            document.getElementById('messageBox').style.display = 'flex';
+            document.getElementById('overlay').style.display = 'block';
+        }
+        function hideMessage() {
+            document.getElementById('messageBox').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
+        function showLoading(message = 'Processing...') {
+            document.getElementById('loadingOverlay').querySelector('p').textContent = message;
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+        // --- DOM Elements ---
+        const photoUploadInput = document.getElementById('photoUpload');
+        const uploadArea = document.getElementById('uploadArea');
+        const uploadBrowseTrigger = document.getElementById('uploadBrowseTrigger');
+        const uploadError = document.getElementById('uploadError');
+        const thumbPreview = document.getElementById('thumbPreview');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomLevelSpan = document.getElementById('zoomLevel');
+        const resetBtn = document.getElementById('resetBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const cropContainer = document.getElementById('cropContainer');
+        const cropArea = document.getElementById('cropArea');
+        const cropHandles = cropArea.querySelectorAll('.crop-handle');
+        const uploadedImage = document.getElementById('uploadedImage');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const previewCtx = previewCanvas.getContext('2d');
+        const saveBtn = document.getElementById('saveBtn');
+        const backToUploadBtn = document.getElementById('backToUploadBtn');
+        // --- State Variables ---
+        let originalImage = null;
+        let cropRect = { x: 80, y: 60, width: 240, height: 320 };
+        let isDraggingCropArea = false;
+        let isResizingCrop = false;
+        let activeHandle = null;
+        let startX, startY;
+        let isDraggingImage = false;
+        let imgCurrentX = 0, imgCurrentY = 0;
+        let currentZoom = 1.0;
+        const ZOOM_STEP = 0.1;
+        const MIN_ZOOM = 0.1;
+        const MAX_ZOOM = 4.0;
+        // --- Enhanced Upload Logic ---
+        function resetUploadError() { uploadError.textContent = ''; }
+        function showUploadError(msg) { uploadError.textContent = msg; }
+        function handleFile(file) {
+            resetUploadError();
+            if (!file || !file.type.match(/^image\//)) {
+                showUploadError('Unsupported file type. Please upload an image.');
+                downloadBtn.disabled = true;
+                thumbPreview.classList.add('hidden');
+                return;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                showUploadError('File too large (max 10MB).');
+                downloadBtn.disabled = true;
+                thumbPreview.classList.add('hidden');
+                return;
+            }
+            showLoading('Loading image...');
+            const url = URL.createObjectURL(file);
+            thumbPreview.src = url;
+            thumbPreview.classList.remove('hidden');
+            originalImage = new Image();
+            originalImage.onload = () => {
+                // Set initial crop area size and position (centered and cover as much as possible)
+                let containerWidth = 400, containerHeight = 400;
+                cropRect.width = Math.min(containerWidth * 0.6, originalImage.width);
+                cropRect.height = cropRect.width * 4 / 3;
+                if (cropRect.height > containerHeight * 0.8) {
+                    cropRect.height = containerHeight * 0.8;
+                    cropRect.width = cropRect.height * 3 / 4;
+                }
+                cropRect.x = (containerWidth - cropRect.width) / 2;
+                cropRect.y = (containerHeight - cropRect.height) / 2;
+                // Set up uploaded image
+                uploadedImage.src = originalImage.src;
+                uploadedImage.classList.remove('hidden');
+                cropContainer.classList.remove('hidden');
+                // Calculate zoom to fit crop
+                const scaleX = cropRect.width / originalImage.width;
+                const scaleY = cropRect.height / originalImage.height;
+                currentZoom = Math.max(scaleX, scaleY, 1.0);
+                uploadedImage.style.width = `${originalImage.width * currentZoom}px`;
+                uploadedImage.style.height = `${originalImage.height * currentZoom}px`;
+                imgCurrentX = cropRect.x + (cropRect.width / 2) - (originalImage.width * currentZoom / 2);
+                imgCurrentY = cropRect.y + (cropRect.height / 2) - (originalImage.height * currentZoom / 2);
+                uploadedImage.style.left = `${imgCurrentX}px`;
+                uploadedImage.style.top = `${imgCurrentY}px`;
+                updateCropAreaStyle();
+                updateZoomLevelDisplay();
+                downloadBtn.disabled = false;
+                hideLoading();
+            };
+            originalImage.onerror = () => {
+                hideLoading();
+                showUploadError('Failed to load image. Try another file.');
+                downloadBtn.disabled = true;
+            };
+            originalImage.src = url;
+        }
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+        uploadArea.addEventListener('dragleave', (e) => { e.preventDefault(); uploadArea.classList.remove('dragover'); });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault(); uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+        });
+        uploadBrowseTrigger.addEventListener('click', () => photoUploadInput.click());
+        uploadArea.addEventListener('click', (e) => { if (e.target === uploadArea) photoUploadInput.click(); });
+        photoUploadInput.addEventListener('change', (e) => { if (e.target.files && e.target.files.length > 0) handleFile(e.target.files[0]); });
+        uploadArea.addEventListener('paste', (e) => { if (e.clipboardData && e.clipboardData.files.length > 0) handleFile(e.clipboardData.files[0]); });
+        uploadArea.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); photoUploadInput.click(); } });
+        // --- Crop Area Drag/Resize ---
+        function updateCropAreaStyle() {
+            cropArea.style.left = `${cropRect.x}px`;
+            cropArea.style.top = `${cropRect.y}px`;
+            cropArea.style.width = `${cropRect.width}px`;
+            cropArea.style.height = `${cropRect.height}px`;
+        }
+        function constrainImagePosition() {
+            const imgWidth = uploadedImage.offsetWidth;
+            const imgHeight = uploadedImage.offsetHeight;
+            if (imgCurrentX > cropRect.x) imgCurrentX = cropRect.x;
+            if (imgCurrentY > cropRect.y) imgCurrentY = cropRect.y;
+            if (imgCurrentX + imgWidth < cropRect.x + cropRect.width) imgCurrentX = (cropRect.x + cropRect.width) - imgWidth;
+            if (imgCurrentY + imgHeight < cropRect.y + cropRect.height) imgCurrentY = (cropRect.y + cropRect.height) - imgHeight;
+            uploadedImage.style.left = `${imgCurrentX}px`;
+            uploadedImage.style.top = `${imgCurrentY}px`;
+        }
+        let activeElement = null;
+        function getCoords(e) {
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        }
+        function startDrag(e) {
+            e.preventDefault();
+            activeElement = e.target;
+            const coords = getCoords(e);
+            startX = coords.x;
+            startY = coords.y;
+            if (activeElement === uploadedImage) {
+                isDraggingImage = true;
+                uploadedImage.style.cursor = 'grabbing';
+            } else if (activeElement.classList.contains('crop-handle')) {
+                isResizingCrop = true;
+                activeHandle = activeElement.dataset.handle;
+            } else if (activeElement === cropArea) {
+                isDraggingCropArea = true;
+                cropArea.style.cursor = 'grabbing';
+            }
+        }
+        function doDrag(e) {
+            if (!activeElement) return;
+            e.preventDefault();
+            const coords = getCoords(e);
+            const dx = coords.x - startX;
+            const dy = coords.y - startY;
+            if (isDraggingImage) {
+                imgCurrentX += dx;
+                imgCurrentY += dy;
+                constrainImagePosition();
+            } else if (isDraggingCropArea) {
+                let newCropX = cropRect.x + dx;
+                let newCropY = cropRect.y + dy;
+                const containerWidth = cropContainer.offsetWidth;
+                const containerHeight = cropContainer.offsetHeight;
+                if (newCropX < 0) newCropX = 0;
+                if (newCropY < 0) newCropY = 0;
+                if (newCropX + cropRect.width > containerWidth) newCropX = containerWidth - cropRect.width;
+                if (newCropY + cropRect.height > containerHeight) newCropY = containerHeight - cropRect.height;
+                cropRect.x = newCropX;
+                cropRect.y = newCropY;
+                updateCropAreaStyle();
+                constrainImagePosition();
+            } else if (isResizingCrop) {
+                const minCropSize = 50;
+                let newWidth = cropRect.width, newHeight = cropRect.height, newX = cropRect.x, newY = cropRect.y;
+                if (activeHandle === 'tl') {
+                    newWidth -= dx; newHeight -= dy; newX += dx; newY += dy;
+                } else if (activeHandle === 'tr') {
+                    newWidth += dx; newHeight -= dy; newY += dy;
+                } else if (activeHandle === 'bl') {
+                    newWidth -= dx; newX += dx; newHeight += dy;
+                } else if (activeHandle === 'br') {
+                    newWidth += dx; newHeight += dy;
+                }
+                newWidth = Math.max(minCropSize, newWidth);
+                newHeight = Math.max(minCropSize, newHeight);
+                if (newX < 0) newX = 0;
+                if (newY < 0) newY = 0;
+                if (newX + newWidth > cropContainer.offsetWidth) newWidth = cropContainer.offsetWidth - newX;
+                if (newY + newHeight > cropContainer.offsetHeight) newHeight = cropContainer.offsetHeight - newY;
+                cropRect.x = newX;
+                cropRect.y = newY;
+                cropRect.width = newWidth;
+                cropRect.height = newHeight;
+                updateCropAreaStyle();
+                constrainImagePosition();
+            }
+            startX = coords.x;
+            startY = coords.y;
+        }
+        function endDrag() {
+            if (isDraggingImage) uploadedImage.style.cursor = 'grab';
+            if (isDraggingCropArea) cropArea.style.cursor = 'grab';
+            isDraggingImage = false;
+            isResizingCrop = false;
+            isDraggingCropArea = false;
+            activeElement = null;
+            activeHandle = null;
+        }
+        uploadedImage.addEventListener('mousedown', startDrag);
+        uploadedImage.addEventListener('touchstart', startDrag);
+        cropArea.addEventListener('mousedown', startDrag);
+        cropArea.addEventListener('touchstart', startDrag);
+        cropHandles.forEach(handle => {
+            handle.addEventListener('mousedown', startDrag);
+            handle.addEventListener('touchstart', startDrag);
+        });
+        document.addEventListener('mousemove', doDrag);
+        document.addEventListener('touchmove', doDrag, { passive: false });
+        document.addEventListener('mouseup', endDrag);
+        document.addEventListener('touchend', endDrag);
+        // --- Zoom ---
+        function updateZoomLevelDisplay() {
+            zoomLevelSpan.textContent = `${Math.round(currentZoom * 100)}%`;
+        }
+        function applyZoom(delta) {
+            if (!originalImage) return;
+            const oldZoom = currentZoom;
+            currentZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoom + delta));
+            if (oldZoom === currentZoom) return;
+            const newImgWidth = originalImage.width * currentZoom;
+            const newImgHeight = originalImage.height * currentZoom;
+            const cropAreaCenterX = cropRect.x + cropRect.width / 2;
+            const cropAreaCenterY = cropRect.y + cropRect.height / 2;
+            const oldImgCenterX = imgCurrentX + uploadedImage.offsetWidth / 2;
+            const oldImgCenterY = imgCurrentY + uploadedImage.offsetHeight / 2;
+            const relativeX = (oldImgCenterX - cropAreaCenterX) / uploadedImage.offsetWidth;
+            const relativeY = (oldImgCenterY - cropAreaCenterY) / uploadedImage.offsetHeight;
+            imgCurrentX = cropAreaCenterX + (relativeX * newImgWidth) - (newImgWidth / 2);
+            imgCurrentY = cropAreaCenterY + (relativeY * newImgHeight) - (newImgHeight / 2);
+            uploadedImage.style.width = `${newImgWidth}px`;
+            uploadedImage.style.height = `${newImgHeight}px`;
+            constrainImagePosition();
+            updateZoomLevelDisplay();
+        }
+        zoomInBtn.addEventListener('click', () => applyZoom(ZOOM_STEP));
+        zoomOutBtn.addEventListener('click', () => applyZoom(-ZOOM_STEP));
+        // --- Crop and Preview ---
+        function cropAndShowPreview() {
+            showLoading('Cropping...');
+            // Calculate scaling
+            const imgDisplayWidth = uploadedImage.offsetWidth;
+            const imgDisplayHeight = uploadedImage.offsetHeight;
+            const scaleX = imgDisplayWidth / originalImage.width;
+            const scaleY = imgDisplayHeight / originalImage.height;
+            // Crop coordinates relative to image
+            const sx = (cropRect.x - imgCurrentX) / scaleX;
+            const sy = (cropRect.y - imgCurrentY) / scaleY;
+            const sWidth = cropRect.width / scaleX;
+            const sHeight = cropRect.height / scaleY;
+            // Set preview canvas size
+            previewCanvas.width = Math.round(sWidth);
+            previewCanvas.height = Math.round(sHeight);
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            previewCtx.drawImage(originalImage, sx, sy, sWidth, sHeight, 0, 0, previewCanvas.width, previewCanvas.height);
+            hideLoading();
+        }
+        downloadBtn.addEventListener('click', () => {
+            cropAndShowPreview();
+            showSection('preview-section');
+        });
+        function showSection(sectionId) {
+            document.querySelectorAll('.app-section').forEach(sec=>sec.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+        }
+        saveBtn.addEventListener('click', () => {
+            const dataURL = previewCanvas.toDataURL('image/jpeg', 0.95);
+            const a = document.createElement('a');
+            a.href = dataURL;
+            a.download = 'passport_photo.jpg';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showMessage('Photo downloaded!');
+        });
+        backToUploadBtn.addEventListener('click', () => {
+            showSection('photo-upload-section');
+        });
+        resetBtn.addEventListener('click', () => {
+            location.reload();
+        });
+        document.getElementById('messageBoxOk').addEventListener('click', hideMessage);
     </script>
 </body>
 </html>
