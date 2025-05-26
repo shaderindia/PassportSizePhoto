@@ -392,24 +392,135 @@ function updatePreviewTransform() {
 }
 function getCropParams(imgW, imgH) {
   if (cropActive && cropRect) {
+    // Compute the cropping rectangle in preview coordinates, map to original image coordinates
     let pvW = photoPreviewWrapper.clientWidth;
     let pvH = photoPreviewWrapper.clientHeight;
+    // Undo pan/zoom/rotate for mapping
     let scale = Math.min(pvW / imgW, pvH / imgH) * zoom;
+    let rad = rotate * Math.PI / 180;
+    // Offset in preview
     let offsetX = (pvW - imgW * scale) / 2 + pan.x;
     let offsetY = (pvH - imgH * scale) / 2 + pan.y;
-    let cropX = cropRect.x - offsetX;
-    let cropY = cropRect.y - offsetY;
-    let cropW = cropRect.w;
-    let cropH = cropRect.h;
+    // Center of cropRect
+    let cropCenterX = cropRect.x + cropRect.w/2 - pvW/2;
+    let cropCenterY = cropRect.y + cropRect.h/2 - pvH/2;
+    // Undo rotation (rotate center back)
+    let unrotX = cropCenterX * Math.cos(-rad) - cropCenterY * Math.sin(-rad);
+    let unrotY = cropCenterX * Math.sin(-rad) + cropCenterY * Math.cos(-rad);
+    // Top-left in image space
+    let cropX = pvW/2 + unrotX - cropRect.w/2 - offsetX;
+    let cropY = pvH/2 + unrotY - cropRect.h/2 - offsetY;
     let sx = cropX / scale;
     let sy = cropY / scale;
-    let sw = cropW / scale;
-    let sh = cropH / scale;
+    let sw = cropRect.w / scale;
+    let sh = cropRect.h / scale;
     sx = Math.max(0, sx);
     sy = Math.max(0, sy);
     sw = Math.max(10, Math.min(sw, imgW - sx));
     sh = Math.max(10, Math.min(sh, imgH - sy));
     return { sx, sy, sw, sh };
+  }
+  // Default: show the visible part of the image
+  let pvW = photoPreviewWrapper.clientWidth, pvH = photoPreviewWrapper.clientHeight;
+  let scale = Math.min(pvW / imgW, pvH / imgH) * zoom;
+  let offsetX = (pvW - imgW * scale) / 2 + pan.x;
+  let offsetY = (pvH - imgH * scale) / 2 + pan.y;
+  let sx = Math.max(0, -offsetX / scale);
+  let sy = Math.max(0, -offsetY / scale);
+  let sw = Math.min(imgW - sx, pvW / scale);
+  let sh = Math.min(imgH - sy, pvH / scale);
+  return { sx, sy, sw, sh };
+}
+
+function renderCanvas() {
+  let dims = getPhotoDimsPx();
+  let pageDims = getPageDimsPx();
+  let spacing = getSpacingPx();
+  let margins = getMarginsPx();
+  let np = Math.max(1, parseInt(numPhotosInput.value) || 8);
+  let maxCols = Math.floor((pageDims.width - margins.left - margins.right + spacing.h) / (dims.width + spacing.h));
+  maxCols = Math.max(1, maxCols);
+  let maxRows = Math.floor((pageDims.height - margins.top - margins.bottom + spacing.v) / (dims.height + spacing.v));
+  maxRows = Math.max(1, maxRows);
+  let maxPhotos = maxCols * maxRows;
+  np = Math.min(np, maxPhotos);
+  let cols = Math.min(maxCols, np);
+  let rows = Math.ceil(np / cols);
+
+  if (autocenterCheck.checked) {
+    let usedW = cols * dims.width + (cols - 1) * spacing.h;
+    let usedH = rows * dims.height + (rows - 1) * spacing.v;
+    let freeW = Math.max(0, pageDims.width - usedW);
+    let freeH = Math.max(0, pageDims.height - usedH);
+    margins.left = margins.right = Math.floor(freeW / 2);
+    margins.top = margins.bottom = Math.floor(freeH / 2);
+    marginTopInput.value = marginBottomInput.value = (unit === 'px') ? margins.top : (unit === 'mm' ? (margins.top*25.4/dpi).toFixed(2) : (margins.top/dpi).toFixed(2));
+    marginLeftInput.value = marginRightInput.value = (unit === 'px') ? margins.left : (unit === 'mm' ? (margins.left*25.4/dpi).toFixed(2) : (margins.left/dpi).toFixed(2));
+  }
+
+  outputCanvas.width = pageDims.width;
+  outputCanvas.height = pageDims.height;
+  let ctx = outputCanvas.getContext('2d');
+  ctx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, pageDims.width, pageDims.height);
+
+  // Dotted cut lines in the center of spacing (before drawing photos)
+  ctx.save();
+  ctx.strokeStyle = "#e57300";
+  ctx.setLineDash([5, 7]);
+  ctx.lineWidth = 1.15;
+
+  // Vertical cut lines
+  for (let c = 1; c < cols; c++) {
+    let x = margins.left + c * dims.width + (c - 0.5) * spacing.h - spacing.h/2;
+    ctx.beginPath();
+    ctx.moveTo(x, margins.top);
+    ctx.lineTo(x, pageDims.height - margins.bottom);
+    ctx.stroke();
+  }
+  // Horizontal cut lines
+  for (let r = 1; r < rows; r++) {
+    let y = margins.top + r * dims.height + (r - 0.5) * spacing.v - spacing.v/2;
+    ctx.beginPath();
+    ctx.moveTo(margins.left, y);
+    ctx.lineTo(pageDims.width - margins.right, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Draw photos with thin black border
+  if (imgLoaded) {
+    let imgW = imgObj.naturalWidth, imgH = imgObj.naturalHeight;
+    let cropParams = getCropParams(imgW, imgH);
+    let drawn = 0;
+    for (let r = 0; r < rows && drawn < np; r++) {
+      for (let c = 0; c < cols && drawn < np; c++, drawn++) {
+        let x = margins.left + c * (dims.width + spacing.h);
+        let y = margins.top + r * (dims.height + spacing.v);
+        ctx.save();
+        ctx.drawImage(
+          imgObj,
+          cropParams.sx, cropParams.sy, cropParams.sw, cropParams.sh,
+          x, y, dims.width, dims.height
+        );
+        // Thin black border
+        ctx.save();
+        ctx.strokeStyle = "#111";
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([]);
+        ctx.strokeRect(x + 0.5, y + 0.5, dims.width - 1, dims.height - 1);
+        ctx.restore();
+        ctx.restore();
+      }
+    }
+  }
+  ctx.save();
+  ctx.strokeStyle = "#b0bec5";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(0, 0, pageDims.width, pageDims.height);
+  ctx.restore();
+};
   }
   let pvW = photoPreviewWrapper.clientWidth, pvH = photoPreviewWrapper.clientHeight;
   let scale = Math.min(pvW / imgW, pvH / imgH) * zoom;
