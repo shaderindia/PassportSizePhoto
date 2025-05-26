@@ -605,3 +605,33 @@ footer .fab.fa-instagram {
         padding-bottom: 1.8rem;
     }
 }
+/* ... keep all previous styles ... */
+
+/* Add/modify these for multi-page navigation and better preview */
+.page { display: block; }
+.page.hidden { display: none !important; }
+.nav-btns {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.9em;
+    margin: 1.3em 0 1.9em 0;
+}
+.nav-btns button {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    padding: 0.5em 1.3em;
+    font-size: 1.1em;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.16s, transform 0.09s;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    box-shadow: 0 2px 10px 0 #2196f31a;
+}
+.nav-btns button:hover {
+    background: var(--secondary);
+    transform: scale(1.03);
+}
