@@ -225,11 +225,15 @@ body.dark .form-group input[type="number"], body.dark .form-group select {
   gap: .7em;
   font-family: 'JetBrains Mono', 'Inter', monospace;
   transition: background .12s, transform .11s;
+  margin-bottom: 0.3em;
 }
 .btn-main:hover, .btn-main:focus {
   background: linear-gradient(90deg, var(--secondary) 0%, var(--primary) 100%);
   transform: translateY(-1px) scale(1.04);
   outline: none;
+}
+.btn-main + .btn-main {
+  margin-left: 0.7em;
 }
 .photo-preview-container {
   margin: 1.5em auto 0 auto;
