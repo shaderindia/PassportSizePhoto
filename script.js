@@ -1,4 +1,5 @@
-// === PART 1/3: DOM, helpers, settings, event handlers ===
+// FULL ADVANCED PASSPORT PHOTO MAKER - ULTRA SMOOTH MOBILE PINCH ZOOM & ALL FEATURES
+
 document.addEventListener('DOMContentLoaded', function () {
   // ==== Element References ====
   const unitSelect = document.getElementById('unit');
@@ -35,6 +36,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const infoModal = document.getElementById('info-modal');
   const closeInfo = document.getElementById('close-info');
   const themeBtn = document.getElementById('theme-btn');
+
   // ==== State ====
   let unit = 'mm';
   let dpi = 300;
@@ -118,6 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
       right: conv(parseFloat(marginRightInput.value) || 0)
     };
   }
+
   // ==== UI Event Handlers ====
   unitSelect.addEventListener('change', () => {
     let oldUnit = unit;
@@ -162,6 +165,7 @@ document.addEventListener('DOMContentLoaded', function () {
     themeBtn.innerHTML = isDark
       ? '<i class="fa fa-sun"></i>'
       : '<i class="fa fa-moon"></i>';
+    renderCanvas();
   };
 
   // ==== Photo Upload ====
@@ -193,14 +197,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // ==== Continue with pan/zoom/crop logic in part 2 ====
-                          // === PART 2/3: Pan, zoom, smooth mobile pinch, crop UI logic ===
-
-  // --- Touch gesture support for smooth mobile pan and zoom ---
+  // --- Ultra-smooth pinch/zoom/pan for mobile & mouse ---
   let isImgPanning = false, lastPan = { x: 0, y: 0 };
-  let lastTouchDist = null, lastTouchMid = null, pinchZooming = false;
+  let pinchZooming = false, pinchStartZoom = 1, pinchStartPan = { x: 0, y: 0 }, lastTouchDist = 0, lastPinchMid = { x: 0, y: 0 };
 
-  photoPreviewWrapper.addEventListener("touchstart", function(e) {
+  photoPreviewWrapper.addEventListener('gesturestart', e => e.preventDefault());
+  photoPreviewWrapper.addEventListener('gesturechange', e => e.preventDefault());
+  photoPreviewWrapper.addEventListener('gestureend', e => e.preventDefault());
+
+  photoPreviewWrapper.addEventListener('touchstart', function(e) {
     if (!imgLoaded) return;
     if (e.touches.length === 2) {
       pinchZooming = true;
@@ -208,40 +213,39 @@ document.addEventListener('DOMContentLoaded', function () {
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
-      lastTouchMid = {
+      pinchStartZoom = zoom;
+      lastPinchMid = {
         x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
         y: (e.touches[0].clientY + e.touches[1].clientY) / 2
       };
+      pinchStartPan = { ...pan };
       e.preventDefault();
-    } else if (e.touches.length === 1) {
+    } else if (e.touches.length === 1 && !cropActive) {
       isImgPanning = true;
       lastPan = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       e.preventDefault();
     }
   }, { passive: false });
-
-  photoPreviewWrapper.addEventListener("touchmove", function(e) {
+  photoPreviewWrapper.addEventListener('touchmove', function(e) {
     if (!imgLoaded) return;
     if (e.touches.length === 2 && pinchZooming) {
       let dist = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
+      let scale = dist / lastTouchDist;
+      let newZoom = Math.max(0.1, Math.min(pinchStartZoom * scale, 8));
       let mid = {
         x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
         y: (e.touches[0].clientY + e.touches[1].clientY) / 2
       };
-      let scale = dist / lastTouchDist;
-      let prevZoom = zoom;
-      zoom = Math.max(0.1, Math.min(zoom * scale, 8));
-      pan.x = (pan.x - mid.x) * (zoom / prevZoom) + mid.x + (mid.x - lastTouchMid.x);
-      pan.y = (pan.y - mid.y) * (zoom / prevZoom) + mid.y + (mid.y - lastTouchMid.y);
-      lastTouchDist = dist;
-      lastTouchMid = mid;
+      pan.x = pinchStartPan.x + (mid.x - lastPinchMid.x) + (mid.x - photoPreviewWrapper.clientWidth/2) * (1 - newZoom/pinchStartZoom);
+      pan.y = pinchStartPan.y + (mid.y - lastPinchMid.y) + (mid.y - photoPreviewWrapper.clientHeight/2) * (1 - newZoom/pinchStartZoom);
+      zoom = newZoom;
       updatePreviewTransform();
       renderCanvas();
       e.preventDefault();
-    } else if (e.touches.length === 1 && isImgPanning) {
+    } else if (e.touches.length === 1 && isImgPanning && !cropActive) {
       let dx = e.touches[0].clientX - lastPan.x;
       let dy = e.touches[0].clientY - lastPan.y;
       pan.x += dx;
@@ -252,26 +256,20 @@ document.addEventListener('DOMContentLoaded', function () {
       e.preventDefault();
     }
   }, { passive: false });
-
-  photoPreviewWrapper.addEventListener("touchend", function(e) {
+  photoPreviewWrapper.addEventListener('touchend', function(e) {
     if (e.touches.length < 2) pinchZooming = false;
     if (e.touches.length === 0) isImgPanning = false;
   }, { passive: false });
 
-  // Desktop pan + zoom (mouse)
+  // Mouse events for desktop
   photoPreviewWrapper.addEventListener('pointerdown', (e) => {
-    if (!imgLoaded) return;
-    if (
-      !e.target.classList.contains('crop-handle') &&
-      e.target !== cropBox
-    ) {
-      isImgPanning = true;
-      lastPan = { x: e.clientX, y: e.clientY };
-      e.preventDefault();
-    }
+    if (!imgLoaded || (cropActive && e.target === cropBox)) return;
+    isImgPanning = true;
+    lastPan = { x: e.clientX, y: e.clientY };
+    e.preventDefault();
   });
   photoPreviewWrapper.addEventListener('pointermove', (e) => {
-    if (isImgPanning) {
+    if (isImgPanning && !cropActive) {
       let dx = e.clientX - lastPan.x, dy = e.clientY - lastPan.y;
       pan.x += dx;
       pan.y += dy;
@@ -513,9 +511,6 @@ document.addEventListener('DOMContentLoaded', function () {
     return { sx, sy, sw, sh };
   }
 
-// ==== Continue in part 3 ====
-                          // === PART 3/3: Download/share, rendering, and init ===
-
   // ==== Download/Share ====
   downloadBtn.addEventListener('click', () => {
     let format = formatSelect.value;
@@ -680,6 +675,4 @@ document.addEventListener('DOMContentLoaded', function () {
     ctx.strokeRect(0, 0, pageDims.width, pageDims.height);
     ctx.restore();
   }
-
-  // ==== END OF SCRIPT ====
 });
