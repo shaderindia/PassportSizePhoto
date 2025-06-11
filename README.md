@@ -23,16 +23,6 @@
 
 ## 🚀 Quick Start
 
-1. **Clone or Download**
-   ```bash
-   git clone https://github.com/shaderindia/passport-photo-maker.git
-   cd passport-photo-maker
-   ```
-
-2. **Open the App**
-   - Simply open `index.html` in your browser.
-   - Or [try the live demo](https://shaderindia.github.io/passport-photo-maker/) (if available).
-
 3. **How to Use**
    - Upload a clear, straight photo (JPG/PNG).
    - Pinch/zoom/drag to center face. Use **Crop** for exact area.
