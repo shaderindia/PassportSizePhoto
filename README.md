@@ -1,12 +1,12 @@
-# Passport Photo Maker
+# FREE Passport Photo Maker
 
-![Passport Photo Maker Screenshot](assets/screenshot.png)
+![Passport Photo Maker FREE](assets/screenshot.png)
 
 **Passport Photo Maker** is a free, ultra-smooth, and mobile-friendly web app to create, crop, and print passport photos. No signup, no watermarks, no hidden fees — just upload, adjust, and download your photo sheet ready for print!
 
 ---
 
-## ✨ Features
+## ✨ ALL FREE Features
 
 - **Upload & Crop:** Load your photo, pinch/zoom/drag to fit, then crop to exact dimensions.
 - **Custom Sizes:** Select from standard units (mm, inch, px) and set photo and page size (A4, 4R, or custom).
@@ -97,4 +97,4 @@ Pull requests, suggestions, and bug reports are welcome!
 
 ---
 
-Made with ❤️ for the open source community.
+Made with ❤️ for the open source community. CONTACT ONLY ON INSTAGRAM
